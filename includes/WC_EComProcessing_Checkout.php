@@ -1,11 +1,10 @@
 <?php
 
-// Don't run standalone
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-require 'genesis/vendor/autoload.php';
+include_once 'genesis/vendor/autoload.php';
 
 use \Genesis\Genesis as Genesis;
 use \Genesis\GenesisConfig as GenesisConf;
@@ -14,11 +13,11 @@ class WC_EComProcessing_Checkout extends WC_Payment_Gateway
 {
 	public function __construct()
 	{
-		$this->id           = 'genesis';
+		$this->id           = 'ecomprocessing';
 		$this->has_fields   = false;
-		$this->method_title = __('E-ComProcesing', 'woocommerce_ecomprocessing');
+		$this->method_title = __('E-Comprocessing', 'woocommerce_ecomprocessing');
 		$this->supports     = array( 'products', 'refunds' );
-		$this->icon         = plugins_url( 'assets/images/logo.gif', plugin_dir_path(__FILE__) );
+		$this->icon         = plugins_url( 'assets/images/logo.png', plugin_dir_path(__FILE__) );
 
 		$this->init_form_fields();
 		$this->init_settings();
@@ -31,10 +30,6 @@ class WC_EComProcessing_Checkout extends WC_Payment_Gateway
 				$this->$name = $value;
 			}
 		}
-
-		// WooCommerce hooks
-		//add_action('init', array(&$this, 'process_gateway_response' ));
-		//add_action( 'woocommerce_thankyou_' . $this->id, array(&$this, 'process_return' ));
 
 		// WPF Redirect
 		add_action( 'woocommerce_receipt_' . $this->id, array(&$this, 'generate_form' ));
@@ -50,7 +45,7 @@ class WC_EComProcessing_Checkout extends WC_Payment_Gateway
 		}
 
 		// Credentials Setup
-		$this->setGenesisCredentials($this->settings);
+		$this->set_credentials($this->settings);
 	}
 
 	/**
@@ -64,7 +59,7 @@ class WC_EComProcessing_Checkout extends WC_Payment_Gateway
 			'enabled' => array(
 				'title'         => __('Enable/Disable', 'woocommerce_ecomprocessing'),
 				'type'          => 'checkbox',
-				'label'         => __('Enable E-ComProcesing Checkout', 'woocommerce_ecomprocessing'),
+				'label'         => __('Enable E-Comprocessing Checkout', 'woocommerce_ecomprocessing'),
 				'default'       => 'no'
 			),
 			'title' => array(
@@ -72,14 +67,14 @@ class WC_EComProcessing_Checkout extends WC_Payment_Gateway
 				'type'          => 'text',
 				'description'   => __('This controls the title which the user sees during checkout.', 'woocommerce_ecomprocessing'),
 				'desc_tip'      => true,
-				'default'       => __('E-ComProcesing', 'woocommerce_ecomprocessing')
+				'default'       => __('E-Comprocessing', 'woocommerce_ecomprocessing')
 			),
 			'description' => array(
 				'title'         => __('Description:', 'woocommerce_ecomprocessing'),
 				'type'          => 'textarea',
 				'description'   => __('This controls the description which the user sees during checkout.', 'woocommerce_ecomprocessing'),
 				'desc_tip'      => true,
-				'default'       => __('Pay securely by Debit or Credit card, through ecomprocessing\'s Secure Gateway.<br/>You will be redirected to your secure server', 'woocommerce_ecomprocessing')
+				'default'       => __('Pay securely by Debit or Credit card, through E-Comprocessing\'s Secure Gateway.<br/>You will be redirected to your secure server', 'woocommerce_ecomprocessing')
 			),
 			'test_mode' => array(
 				'title'         => __('Test Mode', 'woocommerce_ecomprocessing'),
@@ -135,10 +130,10 @@ class WC_EComProcessing_Checkout extends WC_Payment_Gateway
 	{
 		?>
 		<h3>
-			<?php _e('E-ComProcesing', 'woocommerce_ecomprocessing'); ?>
+			<?php _e('E-Comprocessing', 'woocommerce_ecomprocessing'); ?>
 		</h3>
 		<p>
-			<?php _e("E-ComProcesing's Gateway works by sending your client, to our secure (PCI-DSS certified) server.", "woocommerce_ecomprocessing"); ?>
+			<?php _e("E-Comprocessing's Gateway works by sending your client, to our secure (PCI-DSS certified) server.", "woocommerce_ecomprocessing"); ?>
 		</p>
 		<table class="form-table">
 			<?php $this->generate_settings_html(); ?>
@@ -160,6 +155,7 @@ class WC_EComProcessing_Checkout extends WC_Payment_Gateway
 					break;
 				case 'failure':
 					$order->update_status('failed');
+					wc_add_notice( 'Invalid data, please verify your data again!', 'error' );
 					break;
 				case 'cancel':
 					$order->update_status('cancelled');
@@ -188,12 +184,12 @@ class WC_EComProcessing_Checkout extends WC_Payment_Gateway
 			// Notification URLs
 			'notify'    => WC()->api_request_url( get_class($this) ),
 			// Customer URLs
-			'success'   => $order->get_checkout_order_received_url(),
-			'failure'   => $order->get_cancel_order_url(),
-			'cancel'    => $order->get_cancel_order_url(),
+			'success'   => $order->get_checkout_order_received_url(), //sprintf('%s&type=success', $order->get_checkout_order_received_url()),
+			'failure'   => $order->get_cancel_order_url(), //sprintf('%s&type=failure', $order->get_checkout_order_received_url()),
+			'cancel'    => $order->get_cancel_order_url(), //sprintf('%s&type=cancel', $order->get_checkout_order_received_url()),
 		);
 
-		$transaciton_id = $this->makeTransactionId($order_id);
+		$transaciton_id = $this->generate_id($order_id);
 
 		$genesis = new Genesis('WPF\Create');
 
@@ -202,8 +198,8 @@ class WC_EComProcessing_Checkout extends WC_Payment_Gateway
 		        ->setTransactionId( $transaciton_id )
 		        ->setCurrency( $order->get_order_currency() )
 		        ->setAmount( $this->get_order_total() )
-		        ->setUsage( 'WooCommerce' )
-		        ->setDescription( 'WooCommerce' )
+		        ->setUsage( 'TEST' )
+		        ->setDescription( 'TEST' )
 		        ->setCustomerEmail( $order->billing_email )
 		        ->setCustomerPhone( $order->billing_phone )
 		        ->setNotificationUrl( $urls['notify'] )
@@ -226,7 +222,7 @@ class WC_EComProcessing_Checkout extends WC_Payment_Gateway
 		        ->setShippingCity( $order->shipping_city )
 		        ->setShippingState( $order->shipping_state )
 		        ->setShippingCountry( $order->shipping_country )
-		        ->addTransactionType( 'authorize', 'authorize3d', 'sale', 'sale3d' );
+		        ->addTransactionType( 'sale' );
 
 		$genesis->execute();
 
@@ -262,7 +258,7 @@ class WC_EComProcessing_Checkout extends WC_Payment_Gateway
 
 		$genesis
 			->request()
-				->setTransactionId($this->makeTransactionId($order_id))
+				->setTransactionId($this->generate_id($order_id))
 				->setUsage($reason)
 				->setRemoteIp($_SERVER['REMOTE_ADDR'])
 				->setReferenceId($order->get_transaction_id())
@@ -275,10 +271,8 @@ class WC_EComProcessing_Checkout extends WC_Payment_Gateway
 
 		if ($genesis->response()->isSuccessful()) {
 			$order->add_order_note(
-				__( 'Refunded completed!', 'woocommerce_ecomprocessing' ) .
-				"\n" .
-				__( 'Refund ID:', 'woocommerce_ecomprocessing') .
-				"\n" .
+				__( 'Refunded completed!', 'woocommerce_ecomprocessing' ) . PHP_EOL .
+				__( 'Refund ID:', 'woocommerce_ecomprocessing') . PHP_EOL .
 				$response->unique_id
 			);
 
@@ -312,24 +306,18 @@ class WC_EComProcessing_Checkout extends WC_Payment_Gateway
 				$reconcile = $genesis->response()->getResponseObject()->payment_transaction;
 
 				if ($reconcile) {
-					$transaction_id = $this->parseTransactionId(strval($reconcile->transaction_id));
+					list($order_id,$salt) = explode('-', $reconcile->transaction_id);
 
-					$order = new WC_Order( $transaction_id['order_id'] );
+					$order = new WC_Order( $order_id );
 
 					switch ( $reconcile->status ) {
 						case 'approved':
 							$amount = \Genesis\Utils\Currency::exponentToReal(strval($reconcile->amount), strval($reconcile->currency));
 
 							$order->add_order_note(
-								__( 'Payment through Genesis completed!', 'woocommerce_ecomprocessing' ) .
-								"\n" .
-								__( 'Payment ID:', 'woocommerce_ecomprocessing') .
-								"\n" .
-								strval($reconcile->unique_id) .
-								"\n" .
-								__( 'Total:', 'woocommerce_ecomprocessing') .
-								' ' .
-								$amount
+								__( 'Payment through Genesis completed!', 'woocommerce_ecomprocessing' ) . PHP_EOL .
+								__( 'Payment ID:', 'woocommerce_ecomprocessing') . PHP_EOL . strval($reconcile->unique_id) . PHP_EOL .
+								__( 'Total:', 'woocommerce_ecomprocessing') . ' ' . $amount
 							);
 
 							$order->payment_complete( strval($reconcile->unique_id) );
@@ -352,7 +340,7 @@ class WC_EComProcessing_Checkout extends WC_Payment_Gateway
 					header('Content-Type: application/xml');
 					echo $notification->getEchoResponse();
 
-					// WooCommerce are OB everything up to this point.
+					// Woo are OB everything up to this point.
 					// In order to respond, we have to exit!
 					exit(0);
 				}
@@ -367,7 +355,7 @@ class WC_EComProcessing_Checkout extends WC_Payment_Gateway
 	 *
 	 * @return array|string
 	 */
-	private function makeTransactionId($input)
+	private function generate_id($input)
 	{
 		// Why are we doing this?
 		// We need to be sure that we have a unique string we can use as transaction id.
@@ -379,24 +367,6 @@ class WC_EComProcessing_Checkout extends WC_Payment_Gateway
 	}
 
 	/**
-	 * Parse transaction id from a string to assoc array
-	 *
-	 * @param $input
-	 *
-	 * @return array|bool
-	 */
-	private function parseTransactionId($input)
-	{
-		$arr = explode('-', $input);
-
-		// Use @ to silence notices/warnings
-		return array (
-			'order_id' => @$arr[0],
-			'salt'     => @$arr[1],
-		);
-	}
-
-	/**
 	 * Set the Genesis PHP Lib Credentials, based on the customer's
 	 * admin settings
 	 *
@@ -404,7 +374,7 @@ class WC_EComProcessing_Checkout extends WC_Payment_Gateway
 	 *
 	 * @return void
 	 */
-	private function setGenesisCredentials($settings = array())
+	private function set_credentials($settings = array())
 	{
 		GenesisConf::setToken( $settings['token'] );
 		GenesisConf::setUsername( $settings['username'] );

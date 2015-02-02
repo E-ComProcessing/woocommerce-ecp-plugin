@@ -1,7 +1,7 @@
 <?php
 /*
-Plugin Name: WooCommerce eMerchantPay Payment Gateway Client
-Description: Extends WooCommerce's Checkout with eMerchantPay/Genesis Gateway
+Plugin Name: WooCommerce E-Comprocessing Payment Gateway Client
+Description: Extends WooCommerce's Checkout with E-Comprocessing's Gateway
 Version: 1.0.0
 */
 
