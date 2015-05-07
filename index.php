@@ -34,4 +34,4 @@ if ( !function_exists('woocommerce_ecomprocessing_init') ):
 	    add_filter('woocommerce_payment_gateways', 'woocommerce_add_ecomprocessing_gateway' );
 	}
 endif;
-//add_action('plugins_loaded', 'woocommerce_ecomprocessing_init', 0);
+add_action('plugins_loaded', 'woocommerce_ecomprocessing_init', 0);

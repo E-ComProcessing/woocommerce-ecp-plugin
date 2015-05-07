@@ -511,7 +511,7 @@ class WC_EComProcessing_Checkout extends WC_Payment_Gateway {
         \Genesis\Config::setPassword( $settings['password'] );
 
         \Genesis\Config::setEnvironment(
-            ( isset( $settings['test_mode'] ) && $settings['test_mode'] ) ? 'sandbox' : 'production'
+            ( isset( $settings['test_mode'] ) && $settings['test_mode'] === 'yes' ) ? 'sandbox' : 'production'
         );
     }
 }
