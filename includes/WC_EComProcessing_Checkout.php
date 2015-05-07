@@ -393,13 +393,14 @@ class WC_EComProcessing_Checkout extends WC_Payment_Gateway {
                             $woocommerce->cart->empty_cart();
                             break;
                         case 'declined':
-                            $order->update_status( 'failure', $reconcile->technical_message );
+                            $order->update_status( 'failed', $reconcile->technical_message );
                             break;
                         case 'error':
-                            $order->update_status( 'error', $reconcile->technical_message );
+                            $order->update_status( 'failed', $reconcile->technical_message );
                             break;
                         case 'refunded':
-                            $order->update_status( 'refund', $reconcile->technical_message );
+                        case 'voided':
+                            $order->update_status( 'refunded', $reconcile->technical_message );
                     }
 
                     // Woo are OB everything up to this point.
@@ -511,7 +512,7 @@ class WC_EComProcessing_Checkout extends WC_Payment_Gateway {
         \Genesis\Config::setPassword( $settings['password'] );
 
         \Genesis\Config::setEnvironment(
-            ( isset( $settings['test_mode'] ) && $settings['test_mode'] ) ? 'sandbox' : 'production'
+            ( isset( $settings['test_mode'] ) && $settings['test_mode'] === 'yes' ) ? 'sandbox' : 'production'
         );
     }
 }

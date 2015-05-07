@@ -1,8 +1,8 @@
 <?php
 /*
 Plugin Name: WooCommerce E-Comprocessing Payment Gateway Client
-Description: Extends WooCommerce's Checkout with E-Comprocessing's Gateway
-Version: 1.1.0
+Description: Extend WooCommerce's Checkout capabilities with E-Comprocessing's Payment Solutions
+Version: 1.1.1
 */
 
 if ( !function_exists('woocommerce_ecomprocessing_init') ):
@@ -34,4 +34,4 @@ if ( !function_exists('woocommerce_ecomprocessing_init') ):
 	    add_filter('woocommerce_payment_gateways', 'woocommerce_add_ecomprocessing_gateway' );
 	}
 endif;
-//add_action('plugins_loaded', 'woocommerce_ecomprocessing_init', 0);
+add_action('plugins_loaded', 'woocommerce_ecomprocessing_init', 0);
