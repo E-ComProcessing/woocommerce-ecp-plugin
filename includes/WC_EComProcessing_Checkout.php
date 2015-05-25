@@ -401,6 +401,7 @@ class WC_EComProcessing_Checkout extends WC_Payment_Gateway {
                         case 'refunded':
                         case 'voided':
                             $order->update_status( 'refunded', $reconcile->technical_message );
+                            break;
                     }
 
                     // Woo are OB everything up to this point.
@@ -508,6 +509,8 @@ class WC_EComProcessing_Checkout extends WC_Payment_Gateway {
      */
     private function set_credentials( $settings = array() )
     {
+        \Genesis\Config::setEndpoint('ecomprocessing');
+
         \Genesis\Config::setUsername( $settings['username'] );
         \Genesis\Config::setPassword( $settings['password'] );
 
