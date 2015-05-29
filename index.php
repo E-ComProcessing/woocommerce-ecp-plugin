@@ -1,37 +1,49 @@
 <?php
 /*
-Plugin Name: WooCommerce E-Comprocessing Payment Gateway Client
-Description: Extend WooCommerce's Checkout capabilities with E-Comprocessing's Payment Solutions
-Version: 1.1.1
+ * Plugin Name: WooCommerce E-ComProcessing Payment Gateway Client
+ * Description: Extend WooCommerce's Checkout options with E-ComProcessing's Genesis Gateway
+ * Text Domain: woocommerce-ecomprocessing
+ * Author: E-ComProcessing
+ * Version: 1.2.0
 */
 
-if ( !function_exists('woocommerce_ecomprocessing_init') ):
-	function woocommerce_ecomprocessing_init()
-	{
-	    if ( !class_exists( 'WC_Payment_Gateway' ) ) return;
+if ( !function_exists('woocommerce_ecomprocessing_init') ) {
+    function woocommerce_ecomprocessing_init()
+    {
+        if (!class_exists('WC_Payment_Gateway')) {
+            return;
+        }
 
-		// Load text Domain
-	    load_plugin_textdomain('woocommerce_ecomprocessing', false, 'languages');
+        $translation = load_plugin_textdomain(
+            'woocommerce-ecomprocessing', false, basename(__DIR__) . DIRECTORY_SEPARATOR . 'languages');
 
-		// Get Genesis class
-		include dirname( __FILE__ ) . '/includes/WC_EComProcessing_Checkout.php';
+        if (!$translation) {
+            error_log('Unable to load language file for locale: ' . get_locale());
+        }
 
-		/**
-		 * Add the EComProcessing Gateway to WooCommerce's
-		 * list of installed gateways
-		 *
-		 * @param $methods Array of existing Payment Gateways
-		 *
-		 * @return array $methods Appended Payment Gateway
-		 */
-		if ( !function_exists('woocommerce_add_ecomprocessing_gateway') ):
-		    function woocommerce_add_ecomprocessing_gateway($methods) {
-			    array_push($methods, 'WC_EComProcessing_Checkout');
-		        return $methods;
-		    }
-		endif;
+        include dirname(__FILE__) . '/libraries/genesis/vendor/autoload.php';
 
-	    add_filter('woocommerce_payment_gateways', 'woocommerce_add_ecomprocessing_gateway' );
-	}
-endif;
+        include dirname(__FILE__) . '/includes/wc_ecomprocessing_checkout.php';
+
+        /**
+         * Add the EComProcessing Gateway to WooCommerce's
+         * list of installed gateways
+         *
+         * @param $methods Array of existing Payment Gateways
+         *
+         * @return array $methods Appended Payment Gateway
+         */
+        if (!function_exists('woocommerce_add_ecomprocessing_gateway')) {
+            function woocommerce_add_ecomprocessing_gateway($methods)
+            {
+                array_push($methods, 'WC_EComProcessing_Checkout');
+
+                return $methods;
+            }
+        }
+
+        add_filter('woocommerce_payment_gateways', 'woocommerce_add_ecomprocessing_gateway');
+    }
+}
+
 add_action('plugins_loaded', 'woocommerce_ecomprocessing_init', 0);
