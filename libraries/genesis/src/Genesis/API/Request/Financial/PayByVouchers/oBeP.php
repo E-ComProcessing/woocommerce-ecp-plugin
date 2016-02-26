@@ -20,18 +20,16 @@
  *
  * @license     http://opensource.org/licenses/MIT The MIT License
  */
-namespace Genesis\API\Request\Financial\Wallets;
+namespace Genesis\API\Request\Financial\PayByVouchers;
 
 /**
- * Class eZeeWallet
+ * Class oBeP
  *
- * Electronic Wallet
+ * PayByVoucher oBeP transaction via YeePay
  *
- * @package Genesis\API\Request\Financial\Wallets
+ * @package Genesis\API\Request\Financial\PayByVouchers
  */
-// @codingStandardsIgnoreStart
-class eZeeWallet extends \Genesis\API\Request
-// @codingStandardsIgnoreEnd
+class oBeP extends \Genesis\API\Request
 {
     /**
      * Unique transaction id defined by mer-chant
@@ -41,18 +39,38 @@ class eZeeWallet extends \Genesis\API\Request
     protected $transaction_id;
 
     /**
-     * Description of the transaction for later use
-     *
-     * @var string
-     */
-    protected $usage;
-
-    /**
      * IPv4 address of customer
      *
      * @var string
      */
     protected $remote_ip;
+
+    /**
+     * Apply to order product information in the process of payment
+     * and the product description of purchase
+     *
+     * @var string
+     */
+    protected $product_name;
+
+    /**
+     * Type of commodity, includes:
+     * - 3C digits,
+     * - clothing and shoes,
+     * - bag and accessories,
+     * - books and DVDS,
+     * - tuition,
+     * - register exam tuition,
+     * - member fee,
+     * - participation fee,
+     * - logistic service,
+     * - airline tickets,
+     * - hotel catering,
+     * - etc...
+     *
+     * @var string
+     */
+    protected $product_category;
 
     /**
      * Amount of transaction in minor currency unit
@@ -69,32 +87,50 @@ class eZeeWallet extends \Genesis\API\Request
     protected $currency;
 
     /**
-     * URL where customer is sent to after successful payment
+     * Email address of the Customer
      *
      * @var string
      */
-    protected $return_success_url;
+    protected $customer_email;
 
     /**
-     * URL where customer is sent to after unsuccessful payment
+     * Full of customer in Chinese
      *
      * @var string
      */
-    protected $return_failure_url;
+    protected $customer_name;
 
     /**
-     * Email address of consumer who owns the source wallet
+     * Phone number of the customer
      *
      * @var string
      */
-    protected $source_wallet_id;
+    protected $customer_phone;
 
     /**
-     * Password of consumer who owns the source wallet, in Base64 encoded form
+     * Customer ID number.
+     *
+     * Must be a 18 digits valid IDCard number
      *
      * @var string
      */
-    protected $source_wallet_pwd;
+    protected $customer_id_number;
+
+    /**
+     * Bank ID, see the table with bank id codes
+     *
+     * @var string
+     */
+    protected $customer_bank_id;
+
+    /**
+     * Bank identification number of customer.
+     *
+     * Must be a 16 or 19 digits valid bank account number
+     *
+     * @var string
+     */
+    protected $bank_account_number;
 
     /**
      * Set the per-request configuration
@@ -103,12 +139,14 @@ class eZeeWallet extends \Genesis\API\Request
      */
     protected function initConfiguration()
     {
-        $this->config = \Genesis\Utils\Common::createArrayObject(array(
-                'protocol' => 'https',
-                'port'     => 443,
-                'type'     => 'POST',
-                'format'   => 'xml',
-            ));
+        $this->config = \Genesis\Utils\Common::createArrayObject(
+            array(
+                 'protocol' => 'https',
+                 'port'     => 443,
+                 'type'     => 'POST',
+                 'format'   => 'xml',
+            )
+        );
 
         $this->setApiConfig('url', $this->buildRequestURL('gateway', 'process', \Genesis\Config::getToken()));
     }
@@ -124,10 +162,14 @@ class eZeeWallet extends \Genesis\API\Request
             'transaction_id',
             'amount',
             'currency',
-            'return_success_url',
-            'return_failure_url',
-            'source_wallet_id',
-            'source_wallet_pwd',
+            'product_name',
+            'product_category',
+            'customer_name',
+            'customer_email',
+            'customer_phone',
+            'customer_id_number',
+            'customer_bank_id',
+            'bank_account_number'
         );
 
         $this->requiredFields = \Genesis\Utils\Common::createArrayObject($requiredFields);
@@ -142,49 +184,28 @@ class eZeeWallet extends \Genesis\API\Request
     {
         $treeStructure = array(
             'payment_transaction' => array(
-                'transaction_type'   => \Genesis\API\Constants\Transaction\Types::EZEEWALLET,
-                'transaction_id'     => $this->transaction_id,
-                'usage'              => $this->usage,
-                'remote_ip'          => $this->remote_ip,
-                'amount'             => $this->transform(
+                'transaction_type'    => \Genesis\API\Constants\Transaction\Types::PAYBYVOUCHER_YEEPAY,
+                'transaction_id'      => $this->transaction_id,
+                'remote_ip'           => $this->remote_ip,
+                'amount'              => $this->transform(
                     'amount',
                     array(
                         $this->amount,
                         $this->currency,
                     )
                 ),
-                'currency'           => $this->currency,
-                'return_success_url' => $this->return_success_url,
-                'return_failure_url' => $this->return_failure_url,
-                'source_wallet_id'   => $this->source_wallet_id,
-                'source_wallet_pwd'  => $this->transform(
-                    'wallet_password',
-                    array(
-                        $this->source_wallet_pwd
-                    )
-                ),
+                'currency'            => $this->currency,
+                'product_name'        => $this->product_name,
+                'product_category'    => $this->product_category,
+                'customer_name'       => $this->customer_name,
+                'customer_email'      => $this->customer_email,
+                'customer_phone'      => $this->customer_phone,
+                'customer_id_number'  => $this->customer_id_number,
+                'customer_bank_id'    => $this->customer_bank_id,
+                'bank_account_number' => $this->bank_account_number,
             )
         );
 
         $this->treeStructure = \Genesis\Utils\Common::createArrayObject($treeStructure);
-    }
-
-    /**
-     * Apply transformation:
-     *
-     * Encode a string in base64 or return
-     * the input if already in base64
-     *
-     * @param string $input
-     *
-     * @return mixed
-     */
-    protected function transformWalletPassword($input = '')
-    {
-        if (!\Genesis\Utils\Common::isBase64Encoded($input)) {
-            return base64_encode($input);
-        }
-
-        return $input;
     }
 }

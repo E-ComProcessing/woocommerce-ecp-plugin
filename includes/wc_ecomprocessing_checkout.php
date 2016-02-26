@@ -99,17 +99,61 @@ class WC_EComProcessing_Checkout extends WC_Payment_Gateway
             ),
             'description'   => array(
                 'type'        => 'textarea',
-                'title'       => __('Description:', self::LANG_DOMAIN),
-                'description' => __('Text describing this payment method to the customer, during checkout.', self::LANG_DOMAIN),
-                'default'     => __('Pay safely through E-ComProcessing\'s Secure Gateway.', self::LANG_DOMAIN),
+                'title'       => __( 'Description:', self::LANG_DOMAIN ),
+                'description' => __( 
+                			'Text describing this payment method to the customer, during checkout.', 
+                			self::LANG_DOMAIN 
+                ),
+                'default'     => __( 
+                			'Pay safely through E-ComProcessing\'s Secure Gateway.', 
+                			self::LANG_DOMAIN
+                ),
                 'desc_tip'    => true
             ),
             'transaction_types' => array(
                 'type'        => 'multiselect',
                 'title'       => __('Transaction Type', self::LANG_DOMAIN),
-                'options'     => array(
-                    'sale'      => __('Sale', self::LANG_DOMAIN),
-                    'sale3d'    => __('Sale 3D-Secure', self::LANG_DOMAIN),
+               	'options'     => array(
+                    \Genesis\API\Constants\Transaction\Types::ABNIDEAL =>
+                        __('ABN iDEAL', self::LANG_DOMAIN),
+                    \Genesis\API\Constants\Transaction\Types::AUTHORIZE =>
+                        __('Authorize', self::LANG_DOMAIN),
+                    \Genesis\API\Constants\Transaction\Types::AUTHORIZE_3D =>
+                        __('Authorize (3D-Secure)', self::LANG_DOMAIN),
+                    \Genesis\API\Constants\Transaction\Types::CASHU =>
+                        __('CashU', self::LANG_DOMAIN),
+                    \Genesis\API\Constants\Payment\Methods::EPS =>
+                        __('eps', self::LANG_DOMAIN),
+                    \Genesis\API\Constants\Payment\Methods::GIRO_PAY =>
+                        __('GiroPay', self::LANG_DOMAIN),
+                    \Genesis\API\Constants\Transaction\Types::NETELLER =>
+                        __('Neteller', self::LANG_DOMAIN),
+                    \Genesis\API\Constants\Payment\Methods::QIWI =>
+                        __('Qiwi', self::LANG_DOMAIN),
+                    \Genesis\API\Constants\Transaction\Types::PAYBYVOUCHER_SALE =>
+                        __('PayByVoucher (Sale)', self::LANG_DOMAIN),
+                    \Genesis\API\Constants\Transaction\Types::PAYBYVOUCHER_YEEPAY =>
+                        __('PayByVoucher (oBeP)', self::LANG_DOMAIN),
+                    \Genesis\API\Constants\Transaction\Types::PAYSAFECARD =>
+                        __('PaySafeCard', self::LANG_DOMAIN),
+                    \Genesis\API\Constants\Payment\Methods::PRZELEWY24 =>
+                        __('Przelewy24', self::LANG_DOMAIN),
+                    \Genesis\API\Constants\Transaction\Types::POLI =>
+                        __('POLi', self::LANG_DOMAIN),
+                    \Genesis\API\Constants\Payment\Methods::SAFETY_PAY =>
+                        __('SafetyPay', self::LANG_DOMAIN),
+                    \Genesis\API\Constants\Transaction\Types::SALE =>
+                        __('Sale', self::LANG_DOMAIN),
+                    \Genesis\API\Constants\Transaction\Types::SALE_3D =>
+                        __('Sale (3D-Secure)', self::LANG_DOMAIN),
+                    \Genesis\API\Constants\Transaction\Types::SOFORT =>
+                        __('SOFORT', self::LANG_DOMAIN),
+                    \Genesis\API\Constants\Payment\Methods::TELEINGRESO =>
+                        __('TeleIngreso', self::LANG_DOMAIN),
+                    \Genesis\API\Constants\Payment\Methods::TRUST_PAY =>
+                        __('TrustPay', self::LANG_DOMAIN),
+                    \Genesis\API\Constants\Transaction\Types::WEBMONEY =>
+                        __('WebMoney', self::LANG_DOMAIN),
                 ),
                 'description' => __('Select transaction type for the payment transaction', self::LANG_DOMAIN),
                 'desc_tip'    => true,
@@ -278,17 +322,17 @@ class WC_EComProcessing_Checkout extends WC_Payment_Gateway
                 if ($notification->isAuthentic()) {
                     $notification->initReconciliation();
 
-                    $order = $this->get_order_by_id(
-                        $notification->getReconciliationObject()->unique_id
-                    );
-
-                    if (!$order instanceof WC_Order) {
-                        throw new \Exception('Invalid WooCommerce Order!');
-                    }
-
                     $reconcile = $notification->getReconciliationObject()->payment_transaction;
 
                     if ($reconcile) {
+                    		$order = $this->get_order_by_id(
+                            $notification->getReconciliationObject()->unique_id
+                        );
+
+                        if (!$order instanceof WC_Order) {
+                            throw new \Exception('Invalid WooCommerce Order!');
+                        }
+                        
                         switch ($reconcile->status) {
                             case \Genesis\API\Constants\Transaction\States::APPROVED:
                                 $order->add_order_note(
@@ -329,9 +373,9 @@ class WC_EComProcessing_Checkout extends WC_Payment_Gateway
 
                         // Save the terminal token, through which we processed the transaction
                         update_post_meta($order->id, '_transaction_terminal_token', $reconcile->terminal_token);
+                    
+                        $notification->renderResponse();
                     }
-
-                    $notification->renderResponse();
                 }
             } catch(\Exception $e) {
                 header('HTTP/1.1 403 Forbidden');
@@ -418,10 +462,21 @@ class WC_EComProcessing_Checkout extends WC_Payment_Gateway
                     ->setShippingState( $order->shipping_state )
                     ->setShippingCountry( $order->shipping_country );
 
-            foreach ( $this->settings['transaction_types'] as $transaction_type ) {
-                $genesis->request()->addTransactionType( $transaction_type );
+            foreach ($this->get_payment_types() as $type ) {
+                if (is_array($type)) {
+                    $genesis
+                        ->request()
+                            ->addTransactionType(
+                                $type['name'],
+                                $type['parameters']
+                            );
+                } else {
+                    $genesis
+                        ->request()
+                            ->addTransactionType( $type );
+                }
             }
-
+            
             if (isset($this->settings['checkout_language'])) {
                 $genesis->request()->setLanguage(
                     $this->settings['checkout_language']
@@ -443,18 +498,18 @@ class WC_EComProcessing_Checkout extends WC_Payment_Gateway
                 'redirect' => $response->redirect_url
             );
         } catch (\Exception $e) {
-            $error_message = __(
-                'We were unable to process your order!' . '<br/>' .
-                'Please double check your data and try again.',
-                self::LANG_DOMAIN
-            );
 
-            wc_add_notice(
-                @isset($genesis->response()->getResponseObject()->message)
-                     ? $genesis->response()->getResponseObject()->message
-                     : $error_message,
-                'error'
-            );
+            if (isset($genesis) && isset($genesis->response()->getResponseObject()->message)) {
+                $error_message = $genesis->response()->getResponseObject()->message;
+            } else {
+                $error_message = __(
+                    'We were unable to process your order!' . '<br/>' .
+                    'Please double check your data and try again.',
+                    self::LANG_DOMAIN
+                );
+            }
+
+            wc_add_notice($error_message, 'error');
 
             return false;
         }
@@ -673,6 +728,51 @@ class WC_EComProcessing_Checkout extends WC_Payment_Gateway
         update_post_meta($order_id, '_checkout_return_token', $value);
     }
 
+		/**
+     * Get payment/transaction types array
+     *
+     * @return array
+     */
+    private function get_payment_types()
+    {
+        $processed_list = array();
+
+        $selected_types = $this->settings['transaction_types'];
+
+        $alias_map = array(
+            \Genesis\API\Constants\Payment\Methods::EPS         =>
+                \Genesis\API\Constants\Transaction\Types::PPRO,
+            \Genesis\API\Constants\Payment\Methods::GIRO_PAY    =>
+                \Genesis\API\Constants\Transaction\Types::PPRO,
+            \Genesis\API\Constants\Payment\Methods::PRZELEWY24  =>
+                \Genesis\API\Constants\Transaction\Types::PPRO,
+            \Genesis\API\Constants\Payment\Methods::QIWI        =>
+                \Genesis\API\Constants\Transaction\Types::PPRO,
+            \Genesis\API\Constants\Payment\Methods::SAFETY_PAY  =>
+                \Genesis\API\Constants\Transaction\Types::PPRO,
+            \Genesis\API\Constants\Payment\Methods::TELEINGRESO =>
+                \Genesis\API\Constants\Transaction\Types::PPRO,
+            \Genesis\API\Constants\Payment\Methods::TRUST_PAY   =>
+                \Genesis\API\Constants\Transaction\Types::PPRO,
+        );
+
+        foreach ($selected_types as $selected_type) {
+            if (array_key_exists($selected_type, $alias_map)) {
+                $transaction_type = $alias_map[$selected_type];
+
+                $processed_list[$transaction_type]['name'] = $transaction_type;
+
+                $processed_list[$transaction_type]['parameters'][] = array(
+                    'payment_method' => $selected_type
+                );
+            } else {
+                $processed_list[] = $selected_type;
+            }
+        }
+
+        return $processed_list;
+    }
+    
     /**
      * Set the Genesis PHP Lib Credentials, based on the customer's
      * admin settings
@@ -683,13 +783,17 @@ class WC_EComProcessing_Checkout extends WC_Payment_Gateway
      */
     private function set_credentials( $settings = array() )
     {
-        \Genesis\Config::setEndpoint('ecomprocessing');
-
+        \Genesis\Config::setEndpoint(
+            \Genesis\API\Constants\Endpoints::ECOMPROCESSING
+        );
+      
         \Genesis\Config::setUsername( $settings['username'] );
         \Genesis\Config::setPassword( $settings['password'] );
 
-        \Genesis\Config::setEnvironment(
-            ( isset( $settings['test_mode'] ) && $settings['test_mode'] === 'yes' ) ? 'sandbox' : 'production'
+         \Genesis\Config::setEnvironment(
+            ( isset( $settings['test_mode'] ) && $settings['test_mode'] === 'yes' )
+                ? \Genesis\API\Constants\Environments::STAGING
+                : \Genesis\API\Constants\Environments::PRODUCTION
         );
     }
 }
