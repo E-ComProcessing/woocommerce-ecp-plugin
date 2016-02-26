@@ -1,13 +1,13 @@
 E-ComProcessing Gateway Module for WooCommerce
 ==============================================
 
-This is a Payment Module for E-ComProcessing that gives you the ability to process payments through E-ComProcessing’s Payment Gateway - Genesis.
+This is a Payment Module for WooCommerce that gives you the ability to process payments through E-ComProcessing’s Payment Gateway - Genesis.
 
 Requirements
 ------------
 
 * WooCommerce 2.x
-* GenesisPHP 1.2
+* GenesisPHP 1.4
 
 GenesisPHP Requirements
 ------------
