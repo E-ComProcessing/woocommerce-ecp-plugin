@@ -24,11 +24,14 @@ GenesisPHP Requirements
 Installation
 ------------
 
+* Download a ```zip``` file of the E-ComProcessing Gateway Module
 * Login into your Wordpress Admin Panel with Administrator privileges
-* Navigate to ```Plugins -> Add New```
-* Install through the Marketplace/ Select the downloaded ```.zip``` File
-* Activate the newly installed ```WooCommerce E-ComProcessing Payment Gateway Client``` plugin
+* Navigate to ```Plugins -> Add New -> Upload Plugin``` and select the Downloaded Zip File
+* After successully installing the plugin, click ```Activate Plugin```
 * Navigate to ```WooCommerce -> Settings -> Checkout -> E-ComProcessing```
-* Check ```Enable```, set the correct credentials and click "Save changes"
+* Check ```Enable```, set the correct credentials and click ```Save changes```
+
+_Note_: If you have trouble with your credentials or terminal configuration, get in touch with our [support] team
 
 You're now ready to process payments through our gateway.
+[support]: mailto:Tech-Support@e-comprocessing.com
