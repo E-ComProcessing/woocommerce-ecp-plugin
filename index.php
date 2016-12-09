@@ -4,7 +4,7 @@
  * Description: Extend WooCommerce's Checkout options with E-ComProcessing's Genesis Gateway
  * Text Domain: woocommerce-ecomprocessing
  * Author: E-ComProcessing
- * Version: 1.2.4
+ * Version: 1.3.1
 */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -31,12 +31,14 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
 	        include dirname(__FILE__) . '/libraries/genesis/vendor/autoload.php';
 	
 	        include dirname(__FILE__) . '/includes/wc_ecomprocessing_checkout.php';
+
+            include dirname(__FILE__) . '/includes/wc_ecomprocessing_direct.php';
 	
 	        /**
 	         * Add the EComProcessing Gateway to WooCommerce's
 	         * list of installed gateways
 	         *
-	         * @param $methods Array of existing Payment Gateways
+	         * @param $methods array of existing Payment Gateways
 	         *
 	         * @return array $methods Appended Payment Gateway
 	         */
@@ -44,6 +46,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
 	            function woocommerce_add_ecomprocessing_gateway($methods)
 	            {
 	                array_push($methods, 'WC_EComProcessing_Checkout');
+                    array_push($methods, 'WC_EComProcessing_Direct');
 	
 	                return $methods;
 	            }

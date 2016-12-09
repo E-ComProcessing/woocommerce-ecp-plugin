@@ -6,8 +6,9 @@ This is a Payment Module for WooCommerce that gives you the ability to process p
 Requirements
 ------------
 
-* WooCommerce 2.x
-* GenesisPHP 1.4
+* WooCommerce 2.x (Tested up to 2.6.4)
+* [GenesisPHP v1.4.3](https://github.com/GenesisGateway/genesis_php) - (Integrated in Module)
+* PCI-certified server in order to use ```E-ComProcessing Direct```
 
 GenesisPHP Requirements
 ------------
@@ -30,6 +31,14 @@ Installation
 * After successully installing the plugin, click ```Activate Plugin```
 * Navigate to ```WooCommerce -> Settings -> Checkout -> E-ComProcessing```
 * Check ```Enable```, set the correct credentials and click ```Save changes```
+
+Enable WooCommerce Secure Checkout
+------------
+This steps should be followed if you with to use the ```E-ComProcessing Direct``` Method
+* Ensure you have installed and configured a SSL Certificate on your PCI-DSS Certified Server
+* Login into your WordPress Admin Panel with Administrator privileges
+* Navigate to ```WooCommerce``` - > ```Settings``` -> ```Checkout```
+* In Section ```Checkout Process``` check ```Force secure checkout```
 
 _Note_: If you have trouble with your credentials or terminal configuration, get in touch with our [support] team
 

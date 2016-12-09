@@ -63,13 +63,73 @@ msgstr "Pay safely through E-ComProcessing's Secure Gateway."
 msgid "Transaction Type"
 msgstr "Transaction Type"
 
-#: includes/wc_ecomprocessing_checkout.php:120
+#: includes/wc_ecomprocessing_checkout.php:121
+msgid "ABN iDEAL"
+msgstr "ABN iDEAL"
+
+#: includes/wc_ecomprocessing_checkout.php:123
+msgid "Authorize"
+msgstr "Authorize"
+
+#: includes/wc_ecomprocessing_checkout.php:125
+msgid "Authorize (3D-Secure)"
+msgstr "Authorize (3D-Secure)"
+
+#: includes/wc_ecomprocessing_checkout.php:127
+msgid "CashU"
+msgstr "CashU"
+
+#: includes/wc_ecomprocessing_checkout.php:129
+msgid "ELV"
+msgstr "ELV"
+
+#: includes/wc_ecomprocessing_checkout.php:131
+msgid "eps"
+msgstr "eps"
+
+#: includes/wc_ecomprocessing_checkout.php:133
+msgid "GiroPay"
+msgstr "GiroPay"
+
+#: includes/wc_ecomprocessing_checkout.php:135
+msgid "Neteller"
+msgstr "Neteller"
+
+#: includes/wc_ecomprocessing_checkout.php:137
+msgid "Qiwi"
+msgstr "Qiwi"
+
+#: includes/wc_ecomprocessing_checkout.php:139
+msgid "PaySafeCard"
+msgstr "PaySafeCard"
+
+#: includes/wc_ecomprocessing_checkout.php:141
+msgid "Przelewy24"
+msgstr "Przelewy24"
+
+#: includes/wc_ecomprocessing_checkout.php:143
+msgid "SafetyPay"
+msgstr "SafetyPay"
+
+#: includes/wc_ecomprocessing_checkout.php:145
 msgid "Sale"
 msgstr "Sale"
 
-#: includes/wc_ecomprocessing_checkout.php:121
-msgid "Sale 3D-Secure"
-msgstr "Sale 3D-Secure"
+#: includes/wc_ecomprocessing_checkout.php:147
+msgid "Sale (3D-Secure)"
+msgstr "Sale (3D-Secure)"
+
+#: includes/wc_ecomprocessing_checkout.php:149
+msgid "SOFORT"
+msgstr "SOFORT"
+
+#: includes/wc_ecomprocessing_checkout.php:151
+msgid "TeleIngreso"
+msgstr "TeleIngreso"
+
+#: includes/wc_ecomprocessing_checkout.php:153
+msgid "TrustPay"
+msgstr "TrustPay"
 
 #: includes/wc_ecomprocessing_checkout.php:123
 msgid "Select transaction type for the payment transaction"
