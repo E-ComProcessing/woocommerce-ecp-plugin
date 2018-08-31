@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (C) 2016 E-ComProcessing
+ * Copyright (C) 2018 E-ComProcessing Ltd.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -12,21 +12,16 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * @author      E-ComProcessing
- * @copyright   2016 E-ComProcessing
+ * @author      E-ComProcessing Ltd.
+ * @copyright   2018 E-ComProcessing Ltd.
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
-
-$captured_amount = WC_EComProcessing_Helper::getOrderAmountMetaData(
-    $order->id,
-    $payment_method::META_CAPTURED_AMOUNT
-);
 ?>
 <tr>
     <td class="label captured-total"><?php echo $payment_method::getTranslatedText('Captured'); ?>:</td>
-    <?php if (WC_EComProcessing_Helper::getIsWooCommerceVersion('2.6', '>=')) { ?>
+    <?php if (WC_EComProcessing_Helper::isWooCommerceVersion('2.6', '>=')) { ?>
         <td width="1%"></td>
     <?php } ?>
     <td class="total captured-total">

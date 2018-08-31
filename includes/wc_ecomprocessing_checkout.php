@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (C) 2016 E-ComProcessing
+ * Copyright (C) 2018 E-ComProcessing Ltd.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -12,8 +12,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * @author      E-ComProcessing
- * @copyright   2016 E-ComProcessing
+ * @author      E-ComProcessing Ltd.
+ * @copyright   2018 E-ComProcessing Ltd.
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
 
@@ -26,7 +26,7 @@ if (!class_exists('WC_EComProcessing_Method')) {
 }
 
 /**
- * E-ComProcessing Checkout
+ * EComProcessing Checkout
  *
  * @class   WC_EComProcessing_Checkout
  * @extends WC_Payment_Gateway
@@ -43,13 +43,22 @@ class WC_EComProcessing_Checkout extends WC_EComProcessing_Method
     /**
      * Additional Method Setting Keys
      */
-    const SETTING_KEY_TRANSACTION_TYPES = 'transaction_types';
-    const SETTING_KEY_CHECKOUT_LANGUAGE = 'checkout_language';
+    const SETTING_KEY_TRANSACTION_TYPES          = 'transaction_types';
+    const SETTING_KEY_CHECKOUT_LANGUAGE          = 'checkout_language';
+    const SETTING_KEY_INIT_RECURRING_TXN_TYPES   = 'init_recurring_txn_types';
 
     /**
      * Additional Order Meta Constants
      */
     const META_CHECKOUT_TRANSACTION_ID = '_genesis_checkout_id';
+
+    /**
+     * @return string
+     */
+    protected function getModuleTitle()
+    {
+        return static::getTranslatedText('E-ComProcessing Checkout');
+    }
 
     /**
      * Holds the Meta Key used to extract the checkout Transaction
@@ -93,7 +102,9 @@ class WC_EComProcessing_Checkout extends WC_EComProcessing_Method
     public function is_available() {
         return
             parent::is_available() &&
-            !empty($this->settings[self::SETTING_KEY_TRANSACTION_TYPES]);
+            $this->getMethodHasSetting(
+                self::SETTING_KEY_TRANSACTION_TYPES
+            );
     }
 
     /**
@@ -120,7 +131,7 @@ class WC_EComProcessing_Checkout extends WC_EComProcessing_Method
         $areApiTransactionTypesDefined = true;
 
         if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-            if (empty($this->settings[self::SETTING_KEY_TRANSACTION_TYPES])) {
+            if (!$this->getMethodHasSetting(self::SETTING_KEY_TRANSACTION_TYPES)) {
                 $areApiTransactionTypesDefined = false;
             }
         } elseif ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -150,10 +161,8 @@ class WC_EComProcessing_Checkout extends WC_EComProcessing_Method
      */
     public function init_form_fields()
     {
-        // Admin title/description
-        $this->method_title         =
-            static::getTranslatedText('E-ComProcessing Checkout');
-        $this->method_description   =
+        // Admin description
+        $this->method_description =
             static::getTranslatedText('E-ComProcessing\'s Gateway works by sending your client, to our secure (PCI-DSS certified) server.');
 
         parent::init_form_fields();
@@ -161,56 +170,83 @@ class WC_EComProcessing_Checkout extends WC_EComProcessing_Method
         $this->form_fields += array(
             self::SETTING_KEY_TRANSACTION_TYPES => array(
                 'type'        => 'multiselect',
-                'title'       => static::getTranslatedText( 'Transaction Type'),
+                'css'         => 'height:auto',
+                'title'       => static::getTranslatedText('Transaction Type'),
                 'options'     => array(
-                    \Genesis\API\Constants\Transaction\Types::ABNIDEAL =>
-                        static::getTranslatedText('ABN iDEAL'),
-                    \Genesis\API\Constants\Transaction\Types::AUTHORIZE =>
+                    \Genesis\API\Constants\Transaction\Types::ALIPAY              =>
+                        static::getTranslatedText('Alipay'),
+                    \Genesis\API\Constants\Transaction\Types::AUTHORIZE           =>
                         static::getTranslatedText('Authorize'),
-                    \Genesis\API\Constants\Transaction\Types::AUTHORIZE_3D =>
+                    \Genesis\API\Constants\Transaction\Types::AUTHORIZE_3D        =>
                         static::getTranslatedText('Authorize (3D-Secure)'),
-                    \Genesis\API\Constants\Transaction\Types::CASHU =>
+                    \Genesis\API\Constants\Transaction\Types::CASHU               =>
                         static::getTranslatedText('CashU'),
-                    \Genesis\API\Constants\Payment\Methods::EPS =>
+                    \Genesis\API\Constants\Transaction\Types::CITADEL_PAYIN       =>
+                        static::getTranslatedText('Citadel'),
+                    \Genesis\API\Constants\Payment\Methods::EPS                   =>
                         static::getTranslatedText('eps'),
-                    \Genesis\API\Constants\Payment\Methods::GIRO_PAY =>
+                    \Genesis\API\Constants\Transaction\Types::EZEEWALLET          =>
+                        static::getTranslatedText('eZeeWallet'),
+                    \Genesis\API\Constants\Transaction\Types::FASHIONCHEQUE       =>
+                        static::getTranslatedText('Fashioncheque'),
+                    \Genesis\API\Constants\Payment\Methods::GIRO_PAY              =>
                         static::getTranslatedText('GiroPay'),
-                    \Genesis\API\Constants\Transaction\Types::NETELLER =>
+                    \Genesis\API\Constants\Transaction\Types::IDEBIT_PAYIN        =>
+                        static::getTranslatedText('iDebit'),
+                    \Genesis\API\Constants\Transaction\Types::INSTA_DEBIT_PAYIN   =>
+                        static::getTranslatedText('InstaDebit'),
+                    \Genesis\API\Constants\Transaction\Types::INTERSOLVE          =>
+                        static::getTranslatedText('Intersolve'),
+                    \Genesis\API\Constants\Payment\Methods::BCMC                  =>
+                        static::getTranslatedText('Mr.Cash'),
+                    \Genesis\API\Constants\Transaction\Types::KLARNA_AUTHORIZE    =>
+                        static::getTranslatedText('Klarna'),
+                    \Genesis\API\Constants\Payment\Methods::MYBANK                =>
+                        static::getTranslatedText('MyBank'),
+                    \Genesis\API\Constants\Transaction\Types::NETELLER            =>
                         static::getTranslatedText('Neteller'),
-                    \Genesis\API\Constants\Payment\Methods::QIWI =>
-                        static::getTranslatedText('Qiwi'),
-                    \Genesis\API\Constants\Transaction\Types::PAYBYVOUCHER_SALE =>
-                        static::getTranslatedText('PayByVoucher (Sale)'),
-                    \Genesis\API\Constants\Transaction\Types::PAYBYVOUCHER_YEEPAY =>
-                        static::getTranslatedText('PayByVoucher (oBeP)'),
-                    \Genesis\API\Constants\Transaction\Types::PAYSAFECARD =>
+                    \Genesis\API\Constants\Transaction\Types::P24                 =>
+                        static::getTranslatedText('P24'),
+                    \Genesis\API\Constants\Transaction\Types::PAYPAL_EXPRESS      =>
+                        static::getTranslatedText('PayPal Express'),
+                    \Genesis\API\Constants\Transaction\Types::PAYSAFECARD         =>
                         static::getTranslatedText('PaySafeCard'),
-                    \Genesis\API\Constants\Payment\Methods::PRZELEWY24 =>
-                        static::getTranslatedText('Przelewy24'),
-                    \Genesis\API\Constants\Transaction\Types::POLI =>
+                    \Genesis\API\Constants\Transaction\Types::PAYSEC_PAYIN        =>
+                        static::getTranslatedText('PaySec'),
+                    \Genesis\API\Constants\Transaction\Types::POLI                =>
                         static::getTranslatedText('POLi'),
-                    \Genesis\API\Constants\Payment\Methods::SAFETY_PAY =>
+                    \Genesis\API\Constants\Payment\Methods::PRZELEWY24            =>
+                        static::getTranslatedText('Przelewy24'),
+                    \Genesis\API\Constants\Payment\Methods::QIWI                  =>
+                        static::getTranslatedText('Qiwi'),
+                    \Genesis\API\Constants\Payment\Methods::SAFETY_PAY            =>
                         static::getTranslatedText('SafetyPay'),
-                    \Genesis\API\Constants\Transaction\Types::SALE =>
+                    \Genesis\API\Constants\Transaction\Types::SALE                =>
                         static::getTranslatedText('Sale'),
-                    \Genesis\API\Constants\Transaction\Types::SALE_3D =>
+                    \Genesis\API\Constants\Transaction\Types::SALE_3D             =>
                         static::getTranslatedText('Sale (3D-Secure)'),
-                    \Genesis\API\Constants\Transaction\Types::SOFORT =>
+                    \Genesis\API\Constants\Transaction\Types::SDD_SALE            =>
+                        static::getTranslatedText('Sepa Direct Debit'),
+                    \Genesis\API\Constants\Transaction\Types::SOFORT              =>
                         static::getTranslatedText('SOFORT'),
-                    \Genesis\API\Constants\Payment\Methods::TELEINGRESO =>
-                        static::getTranslatedText('TeleIngreso'),
-                    \Genesis\API\Constants\Payment\Methods::TRUST_PAY =>
+                    \Genesis\API\Constants\Transaction\Types::TCS                 =>
+                        static::getTranslatedText('TCS'),
+                    \Genesis\API\Constants\Transaction\Types::TRUSTLY_SALE        =>
+                        static::getTranslatedText('Trustly'),
+                    \Genesis\API\Constants\Payment\Methods::TRUST_PAY             =>
                         static::getTranslatedText('TrustPay'),
-                    \Genesis\API\Constants\Transaction\Types::WEBMONEY =>
+                    \Genesis\API\Constants\Transaction\Types::WEBMONEY            =>
                         static::getTranslatedText('WebMoney'),
+                    \Genesis\API\Constants\Transaction\Types::WECHAT              =>
+                        static::getTranslatedText('WeChat'),
                 ),
-                'description' => static::getTranslatedText( 'Select transaction type for the payment transaction' ),
+                'description' => static::getTranslatedText('Select transaction type for the payment transaction'),
                 'desc_tip'    => true,
             ),
             self::SETTING_KEY_CHECKOUT_LANGUAGE => array(
-                'type'      => 'select',
-                'title'     => static::getTranslatedText( 'Checkout Language' ),
-                'options'   => array(
+                'type'        => 'select',
+                'title'       => static::getTranslatedText('Checkout Language'),
+                'options'     => array(
                     'en' => static::getTranslatedText(\Genesis\API\Constants\i18n::EN),
                     'es' => static::getTranslatedText(\Genesis\API\Constants\i18n::ES),
                     'fr' => static::getTranslatedText(\Genesis\API\Constants\i18n::FR),
@@ -225,9 +261,40 @@ class WC_EComProcessing_Checkout extends WC_EComProcessing_Method
                     'bg' => static::getTranslatedText(\Genesis\API\Constants\i18n::BG),
                     'hi' => static::getTranslatedText(\Genesis\API\Constants\i18n::HI),
                 ),
-                'description' => __( 'Select language for the customer UI on the remote server' ),
+                'description' => __('Select language for the customer UI on the remote server'),
                 'desc_tip'    => true,
             ),
+        );
+
+        $this->form_fields += $this->build_subscription_form_fields();
+    }
+
+    /**
+     * Admin Panel Subscription Field Definition
+     *
+     * @return array
+     */
+    protected function build_subscription_form_fields()
+    {
+        $subscription_form_fields = parent::build_subscription_form_fields();
+
+        return array_merge(
+            $subscription_form_fields,
+            array(
+                self::SETTING_KEY_INIT_RECURRING_TXN_TYPES => array(
+                    'type'        => 'multiselect',
+                    'css'         => 'height:auto',
+                    'title'       => static::getTranslatedText('Init Recurring Transaction Types'),
+                    'options'     => array(
+                        \Genesis\API\Constants\Transaction\Types::INIT_RECURRING_SALE =>
+                            static::getTranslatedText('Init Recurring Sale'),
+                        \Genesis\API\Constants\Transaction\Types::INIT_RECURRING_SALE_3D =>
+                            static::getTranslatedText('Init Recurring Sale (3D-Secure)')
+                    ),
+                    'description' => static::getTranslatedText('Select transaction types for the initial recurring transaction'),
+                    'desc_tip'    => true,
+                ),
+            )
         );
     }
 
@@ -235,11 +302,12 @@ class WC_EComProcessing_Checkout extends WC_EComProcessing_Method
      * Returns a list with data used for preparing a request to the gateway
      *
      * @param WC_Order $order
+     * @param bool $isRecurring
      * @return array
      */
-    protected function populateGateRequestData($order)
+    protected function populateGateRequestData($order, $isRecurring = false)
     {
-        $data = parent::populateGateRequestData($order);
+        $data = parent::populateGateRequestData($order, $isRecurring);
 
         return array_merge(
             $data,
@@ -250,151 +318,233 @@ class WC_EComProcessing_Checkout extends WC_EComProcessing_Method
     }
 
     /**
-     * Initiate Checkout session
+     * @param array $data
+     * @return \Genesis\Genesis
+     */
+    protected function prepareInitialGenesisRequest($data)
+    {
+        $genesis = new \Genesis\Genesis( 'WPF\Create' );
+
+        /** @var \Genesis\API\Request\WPF\Create $wpfRequest */
+        $wpfRequest = $genesis->request();
+
+        $wpfRequest
+            ->setTransactionId(
+                $data['transaction_id']
+            )
+            ->setCurrency(
+                $data['currency']
+            )
+            ->setAmount(
+                $data['amount']
+            )
+            ->setUsage(
+                $data['usage']
+            )
+            ->setDescription(
+                $data['description']
+            )
+            ->setCustomerEmail(
+                $data['customer_email']
+            )
+            ->setCustomerPhone(
+                $data['customer_phone']
+            );
+
+        /**
+         * Notification & Urls
+         */
+        $wpfRequest
+            ->setNotificationUrl(
+                $data['notification_url']
+            )
+            ->setReturnSuccessUrl(
+                $data['return_success_url']
+            )
+            ->setReturnFailureUrl(
+                $data['return_failure_url']
+            )
+            ->setReturnCancelUrl(
+                $data['return_cancel_url']
+            );
+
+        /**
+         * Billing
+         */
+        $wpfRequest
+            ->setBillingFirstName(
+                $data['billing']['first_name']
+            )
+            ->setBillingLastName(
+                $data['billing']['last_name']
+            )
+            ->setBillingAddress1(
+                $data['billing']['address1']
+            )
+            ->setBillingAddress2(
+                $data['billing']['address2']
+            )
+            ->setBillingZipCode(
+                $data['billing']['zip_code']
+            )
+            ->setBillingCity(
+                $data['billing']['city']
+            )
+            ->setBillingState(
+                $data['billing']['state']
+            )
+            ->setBillingCountry(
+                $data['billing']['country']
+            );
+
+        /**
+         * Shipping
+         */
+        $wpfRequest
+            ->setShippingFirstName(
+                $data['shipping']['first_name']
+            )
+            ->setShippingLastName(
+                $data['shipping']['last_name']
+            )
+            ->setShippingAddress1(
+                $data['shipping']['address1']
+            )
+            ->setShippingAddress2(
+                $data['shipping']['address2']
+            )
+            ->setShippingZipCode(
+                $data['shipping']['zip_code']
+            )
+            ->setShippingCity(
+                $data['shipping']['city']
+            )
+            ->setShippingState(
+                $data['shipping']['state']
+            )
+            ->setShippingCountry(
+                $data['shipping']['country']
+            );
+
+        /**
+         * WPF Language
+         */
+        if ($this->getMethodHasSetting(self::SETTING_KEY_CHECKOUT_LANGUAGE)) {
+            $wpfRequest->setLanguage(
+                $this->getMethodSetting(self::SETTING_KEY_CHECKOUT_LANGUAGE)
+            );
+        }
+
+        return $genesis;
+    }
+
+    /**
+     * @param \Genesis\Genesis $genesis
+     * @param WC_Order $order
+     * @param array $requestData
+     * @param bool $isRecurring
+     * @return void
+     */
+    protected function addTransactionTypesToGatewayRequest($genesis, $order, $requestData, $isRecurring)
+    {
+        /** @var \Genesis\API\Request\WPF\Create $wpfRequest */
+        $wpfRequest = $genesis->request();
+
+        if ($isRecurring) {
+            $recurring_types = $this->get_recurring_payment_types();
+            foreach ($recurring_types as $type) {
+                $wpfRequest->addTransactionType( $type );
+            }
+
+            return;
+        }
+
+        $this->addCustomParametersToTrxTypes($wpfRequest, $order, $requestData);
+    }
+
+    /**
+     * @param \Genesis\API\Request\WPF\Create $wpfRequest $wpfRequest
+     * @param WC_Order $order
+     * @param array $requestData
+     */
+    private function addCustomParametersToTrxTypes($wpfRequest, WC_Order $order, $requestData)
+    {
+        $types = $this->get_payment_types();
+
+        foreach ( $types as $type ) {
+            if (is_array($type)) {
+                $wpfRequest->addTransactionType($type['name'], $type['parameters']);
+
+                continue;
+            }
+
+            switch ($type) {
+                case \Genesis\API\Constants\Transaction\Types::CITADEL_PAYIN:
+                    $userIdHash              = WC_EComProcessing_Helper::getCurrentUserIdHash();
+                    $transactionCustomParams = array(
+                        'merchant_customer_id' => $userIdHash
+                    );
+                    break;
+                case \Genesis\API\Constants\Transaction\Types::IDEBIT_PAYIN:
+                case \Genesis\API\Constants\Transaction\Types::INSTA_DEBIT_PAYIN:
+                    $userIdHash              = WC_EComProcessing_Helper::getCurrentUserIdHash();
+                    $transactionCustomParams = array(
+                        'customer_account_id' => $userIdHash
+                    );
+                    break;
+                case \Genesis\API\Constants\Transaction\Types::KLARNA_AUTHORIZE:
+                    $transactionCustomParams = WC_EComProcessing_Helper::getKlarnaCustomParamItems($order)->toArray();
+                    break;
+                default:
+                    $transactionCustomParams = [];
+            }
+
+            $wpfRequest->addTransactionType($type, $transactionCustomParams);
+        }
+    }
+
+    /**
+     * Initiate Order Checkout session
      *
      * @param int $order_id
-     *
-     * @return string HTML form
+     * @return array|bool
      */
-    public function process_payment( $order_id )
+    protected function process_order_payment( $order_id )
+    {
+        return $this->process_common_payment( $order_id, false);
+    }
+
+    /**
+     * Initiate Gateway Payment Session
+     *
+     * @param int $order_id
+     * @return array|bool
+     */
+    protected function process_init_subscription_payment( $order_id )
+    {
+        return $this->process_common_payment( $order_id, true);
+    }
+
+    /**
+     * Initiate Order Checkout session
+     *   or
+     * Init Recurring Checkout
+     *
+     * @param int $order_id
+     * @param bool $isRecurring
+     * @return array|bool
+     */
+    protected function process_common_payment( $order_id, $isRecurring )
     {
         $order = new WC_Order( absint($order_id)  );
 
-        $data = $this->populateGateRequestData($order);
+        $data = $this->populateGateRequestData($order, $isRecurring);
 
         try {
-            $this->set_credentials(
-                $this->settings
-            );
+            $this->set_credentials();
 
-            $description = $this->get_item_description( $order );
-
-            $genesis = new \Genesis\Genesis( 'WPF\Create' );
-
-            $genesis
-                ->request()
-                ->setTransactionId(
-                    $data['transaction_id']
-                )
-                ->setCurrency(
-                    $data['currency']
-                )
-                ->setAmount(
-                    $data['amount']
-                )
-                ->setUsage(
-                    $data['usage']
-                )
-                ->setDescription(
-                    $description
-                )
-                ->setCustomerEmail(
-                    $data['customer_email']
-                )
-                ->setCustomerPhone(
-                    $data['customer_phone']
-                )
-                ->setNotificationUrl(
-                    $data['notification_url']
-                )
-                ->setReturnSuccessUrl(
-                    $data['return_success_url']
-                )
-                ->setReturnFailureUrl(
-                    $data['return_failure_url']
-                )
-                ->setReturnCancelUrl(
-                    $data['return_cancel_url']
-                )
-                ->setBillingFirstName(
-                    $data['billing']['first_name']
-                )
-                ->setBillingLastName(
-                    $data['billing']['first_name']
-                )
-                ->setBillingAddress1(
-                    $data['billing']['address1']
-                )
-                ->setBillingAddress2(
-                    $data['billing']['address2']
-                )
-                ->setBillingZipCode(
-                    $data['billing']['zip_code']
-                )
-                ->setBillingCity(
-                    $data['billing']['city']
-                )
-                ->setBillingState(
-                    $data['billing']['state']
-                )
-                ->setBillingCountry(
-                    $data['billing']['country']
-                )
-                //Shipping
-                ->setShippingFirstName(
-                    $data['shipping']['first_name']
-                )
-                ->setShippingLastName(
-                    $data['shipping']['last_name']
-                )
-                ->setShippingAddress1(
-                    $data['shipping']['address1']
-                )
-                ->setShippingAddress2(
-                    $data['shipping']['address2']
-                )
-                ->setShippingZipCode(
-                    $data['shipping']['zip_code']
-                )
-                ->setShippingCity(
-                    $data['shipping']['city']
-                )
-                ->setShippingState(
-                    $data['shipping']['state']
-                )
-                ->setShippingCountry(
-                    $data['shipping']['country']
-                );
-
-            foreach ($this->get_payment_types() as $type ) {
-                if (is_array($type)) {
-                    $genesis
-                        ->request()
-                        ->addTransactionType(
-                            $type['name'],
-                            $type['parameters']
-                        );
-                } else {
-                    if (\Genesis\API\Constants\Transaction\Types::isPayByVoucher($type)) {
-                        $parameters = array(
-                            'card_type' =>
-                                \Genesis\API\Constants\Transaction\Parameters\PayByVouchers\CardTypes::VIRTUAL,
-                            'redeem_type' =>
-                                \Genesis\API\Constants\Transaction\Parameters\PayByVouchers\RedeemTypes::INSTANT
-                        );
-                        if ($type == \Genesis\API\Constants\Transaction\Types::PAYBYVOUCHER_YEEPAY) {
-                            $parameters['product_name'] = $description;
-                            $parameters['product_category'] = $description;
-                        }
-                        $genesis
-                            ->request()
-                            ->addTransactionType(
-                                $type,
-                                $parameters
-                            );
-                    } else {
-                        $genesis
-                            ->request()
-                            ->addTransactionType( $type );
-                    }
-                }
-            }
-
-            if (isset($this->settings[self::SETTING_KEY_CHECKOUT_LANGUAGE])) {
-                $genesis->request()->setLanguage(
-                    $this->settings[self::SETTING_KEY_CHECKOUT_LANGUAGE]
-                );
-            }
+            $genesis = $this->prepareInitialGenesisRequest($data);
+            $this->addTransactionTypesToGatewayRequest($genesis, $order, $data, $isRecurring);
 
             $genesis->execute();
 
@@ -405,18 +555,13 @@ class WC_EComProcessing_Checkout extends WC_EComProcessing_Method
                 isset($response->redirect_url);
 
             if ($isWpfSuccessfullyCreated) {
-                // Save the Checkout Id
-                update_post_meta(
-                    $order->id,
-                    self::META_CHECKOUT_TRANSACTION_ID,
-                    $response->unique_id
-                );
+                $this->save_checkout_trx_to_order($response, WC_EComProcessing_Helper::getOrderProp($order, 'id'));
 
                 // Create One-time token to prevent redirect abuse
                 $this->set_one_time_token($order_id, $this->generateTransactionId());
 
                 return array(
-                    'result'   => 'success',
+                    'result'   => static::RESPONSE_SUCCESS,
                     'redirect' => $response->redirect_url
                 );
             } else {
@@ -427,7 +572,7 @@ class WC_EComProcessing_Checkout extends WC_EComProcessing_Method
                 );
             }
 
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             if (isset($genesis) && isset($genesis->response()->getResponseObject()->message)) {
                 $error_message = $genesis->response()->getResponseObject()->message;
             } else {
@@ -437,12 +582,24 @@ class WC_EComProcessing_Checkout extends WC_EComProcessing_Method
                 );
             }
 
-            wc_add_notice($error_message, 'error');
+            WC_EComProcessing_Message_Helper::addErrorNotice($error_message);
 
-            error_log($e->getMessage());
+            WC_EComProcessing_Helper::logException($exception);
 
             return false;
         }
+    }
+
+    protected function save_checkout_trx_to_order($response_obj, $order_id) {
+        // Save the Checkout Id
+        WC_EComProcessing_Helper::setOrderMetaData(
+            $order_id,
+            self::META_CHECKOUT_TRANSACTION_ID,
+            $response_obj->unique_id
+        );
+
+        // Save whole trx
+        WC_EComProcessing_Helper::saveInitialTrxToOrder($order_id, $response_obj);
     }
 
     /**
@@ -454,18 +611,18 @@ class WC_EComProcessing_Checkout extends WC_EComProcessing_Method
      */
     protected function set_terminal_token( $order )
     {
-        $token = WC_EComProcessing_Helper::getOrderMetaData(
-            $order->id,
-            self::META_TRANSACTION_TERMINAL_TOKEN
-        );
+         $token = WC_EComProcessing_Helper::getOrderMetaData(
+             $order->id,
+             self::META_TRANSACTION_TERMINAL_TOKEN
+         );
 
-        if (empty( $token ) ) {
-            return false;
-        }
+         if (empty( $token ) ) {
+             return false;
+         }
 
-        \Genesis\Config::setToken( $token );
+         \Genesis\Config::setToken( $token );
 
-        return true;
+         return true;
     }
 
     /**
@@ -477,7 +634,7 @@ class WC_EComProcessing_Checkout extends WC_EComProcessing_Method
     {
         $processed_list = array();
 
-        $selected_types = $this->settings[self::SETTING_KEY_TRANSACTION_TYPES];
+        $selected_types = $this->getMethodSetting(self::SETTING_KEY_TRANSACTION_TYPES);
 
         $alias_map = array(
             \Genesis\API\Constants\Payment\Methods::EPS         =>
@@ -490,9 +647,11 @@ class WC_EComProcessing_Checkout extends WC_EComProcessing_Method
                 \Genesis\API\Constants\Transaction\Types::PPRO,
             \Genesis\API\Constants\Payment\Methods::SAFETY_PAY  =>
                 \Genesis\API\Constants\Transaction\Types::PPRO,
-            \Genesis\API\Constants\Payment\Methods::TELEINGRESO =>
-                \Genesis\API\Constants\Transaction\Types::PPRO,
             \Genesis\API\Constants\Payment\Methods::TRUST_PAY   =>
+                \Genesis\API\Constants\Transaction\Types::PPRO,
+            \Genesis\API\Constants\Payment\Methods::BCMC        =>
+                \Genesis\API\Constants\Transaction\Types::PPRO,
+            \Genesis\API\Constants\Payment\Methods::MYBANK      =>
                 \Genesis\API\Constants\Transaction\Types::PPRO,
         );
 
@@ -511,6 +670,43 @@ class WC_EComProcessing_Checkout extends WC_EComProcessing_Method
         }
 
         return $processed_list;
+    }
+
+    /**
+     * @return array
+     */
+    protected function get_recurring_payment_types()
+    {
+        return $this->getMethodSetting(self::SETTING_KEY_INIT_RECURRING_TXN_TYPES);
+    }
+
+    /**
+     * @return bool
+     */
+    protected function isSubscriptionEnabled()
+    {
+        return
+            parent::isSubscriptionEnabled() &&
+            $this->getMethodHasSetting(
+                self::SETTING_KEY_INIT_RECURRING_TXN_TYPES
+            );
+    }
+
+    /**
+     * Determines the Recurring Token, which needs to used for the RecurringSale Transactions
+     *
+     * @param WC_Order $order
+     * @return string
+     */
+    protected function getRecurringToken( $order )
+    {
+        $recurringToken = parent::getRecurringToken( $order );
+
+        if (!empty($recurringToken)) {
+            return $recurringToken;
+        }
+
+        return WC_EComProcessing_Subscription_Helper::getTerminalTokenMetaFromSubscriptionOrder( $order->id );
     }
 }
 

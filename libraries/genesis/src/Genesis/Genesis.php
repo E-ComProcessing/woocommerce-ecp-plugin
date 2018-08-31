@@ -22,6 +22,11 @@
  */
 namespace Genesis;
 
+use Genesis\API\Constants\Transaction\Types;
+use Genesis\API\Request;
+use Genesis\Exceptions\InvalidArgument;
+use Genesis\Utils\Common;
+
 /**
  * Base class of Genesis
  *
@@ -63,21 +68,97 @@ class Genesis
         \Genesis\Utils\Requirements::verify();
 
         // Initialize the request
-        $request = sprintf('\Genesis\API\Request\%s', $request);
+        $request = $this->getRequestClass($request);
 
-        if (class_exists($request)) {
-            $this->requestCtx = new $request;
-        } else {
+        if (!class_exists($request)) {
             throw new \Genesis\Exceptions\InvalidMethod(
                 'The selected transaction type is invalid!'
             );
         }
+
+        if (\Genesis\Utils\Common::isClassAbstract($request)) {
+            throw new \Genesis\Exceptions\InvalidMethod(
+                'The selected transaction type is invalid, because it is abstract!'
+            );
+        }
+        $this->requestCtx = new $request;
 
         // Initialize the Network
         $this->networkCtx = new \Genesis\Network();
 
         // Initialize Response Object
         $this->responseCtx = new \Genesis\API\Response();
+    }
+
+    /**
+     * @param string $request
+     *
+     * @return string
+     * @throws \Genesis\Exceptions\DeprecatedMethod
+     */
+    protected function getRequestClass($request)
+    {
+        $parts = explode('\\', $request);
+        $lastIndex = count($parts) - 1;
+
+        switch ($parts[$lastIndex]) {
+            case 'Void':
+                $parts[$lastIndex] = 'Cancel';
+                break;
+            case 'AVS':
+            case 'INPay':
+            case 'ABNiDEAL':
+                $this->throwDeprecatedTransactionType();
+        }
+
+        if (isset($parts[$lastIndex - 1]) && $parts[$lastIndex - 1] === 'PayByVauchers') {
+            $this->throwDeprecatedTransactionType();
+        }
+
+        return sprintf(
+            '\Genesis\API\Request\%s',
+            implode('\\', $parts)
+        );
+    }
+
+    /**
+     * @throws \Genesis\Exceptions\DeprecatedMethod
+     */
+    protected function throwDeprecatedTransactionType()
+    {
+        throw new \Genesis\Exceptions\DeprecatedMethod(
+            'The selected transaction type is deprecated!'
+        );
+    }
+
+    /**
+     * @param string $trxType
+     * @param array $params
+     * @throws \Genesis\Exceptions\InvalidArgument
+     * @return Genesis
+     */
+    public static function financialFactory($trxType, $params = [])
+    {
+        $requestClass = Types::getFinancialRequestClassForTrxType($trxType);
+        if ($requestClass === false) {
+            throw new InvalidArgument(
+                'The selected transaction type is invalid!'
+            );
+        }
+
+        $genesis = new static($requestClass);
+
+        foreach ($params as $name => $value) {
+            $method = 'set' . Common::snakeCaseToCamelCase($name);
+
+            if (call_user_func([ $genesis->request(), $method ], $value) === false) {
+                throw new InvalidArgument(
+                    'Invalid argument ' . $name . ' for transaction type ' . $trxType
+                );
+            }
+        }
+
+        return $genesis;
     }
 
     /**
