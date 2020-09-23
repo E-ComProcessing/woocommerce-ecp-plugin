@@ -4,7 +4,7 @@
  * Description: Extend WooCommerce's Checkout options with E-ComProcessing's Genesis Gateway
  * Text Domain: woocommerce-ecomprocessing
  * Author: E-ComProcessing
- * Version: 1.8.3
+ * Version: 1.8.4
 */
 
 if ( ! defined( 'ABSPATH' ) ) {
