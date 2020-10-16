@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (C) 2018 E-ComProcessing Ltd.
+ * Copyright (C) 2018 E-Comprocessing Ltd.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -12,8 +12,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * @author      E-ComProcessing Ltd.
- * @copyright   2018 E-ComProcessing Ltd.
+ * @author      E-Comprocessing Ltd.
+ * @copyright   2018 E-Comprocessing Ltd.
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
 
@@ -26,7 +26,7 @@ if (!class_exists('WC_EComProcessing_Method')) {
 }
 
 /**
- * EComProcessing Checkout
+ * EComprocessing Checkout
  *
  * @class   WC_EComProcessing_Checkout
  * @extends WC_Payment_Gateway
@@ -57,7 +57,7 @@ class WC_EComProcessing_Checkout extends WC_EComProcessing_Method
      */
     protected function getModuleTitle()
     {
-        return static::getTranslatedText('E-ComProcessing Checkout');
+        return static::getTranslatedText('E-Comprocessing Checkout');
     }
 
     /**
@@ -163,7 +163,7 @@ class WC_EComProcessing_Checkout extends WC_EComProcessing_Method
     {
         // Admin description
         $this->method_description =
-            static::getTranslatedText('E-ComProcessing\'s Gateway works by sending your client, to our secure (PCI-DSS certified) server.');
+            static::getTranslatedText('E-Comprocessing\'s Gateway works by sending your client, to our secure (PCI-DSS certified) server.');
 
         parent::init_form_fields();
 

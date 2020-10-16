@@ -32,7 +32,7 @@ namespace Genesis\API\Constants;
 class Endpoints
 {
     /**
-     * Domain for E-ComProcessing's Genesis instance
+     * Domain for E-Comprocessing's Genesis instance
      *
      * @link http://www.e-comprocessing.com/
      */

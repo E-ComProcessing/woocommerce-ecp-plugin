@@ -1,10 +1,10 @@
 <?php
 /*
- * Plugin Name: WooCommerce E-ComProcessing Payment Gateway Client
- * Description: Extend WooCommerce's Checkout options with E-ComProcessing's Genesis Gateway
+ * Plugin Name: WooCommerce E-Comprocessing Payment Gateway Client
+ * Description: Extend WooCommerce's Checkout options with E-Comprocessing's Genesis Gateway
  * Text Domain: woocommerce-ecomprocessing
  * Author: E-ComProcessing
- * Version: 1.8.4
+ * Version: 1.8.5
 */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -35,7 +35,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
             include dirname(__FILE__) . '/includes/wc_ecomprocessing_direct.php';
 
             /**
-             * Add the EComProcessing Gateway to WooCommerce's
+             * Add the EComprocessing Gateway to WooCommerce's
              * list of installed gateways
              *
              * @param $methods Array of existing Payment Gateways

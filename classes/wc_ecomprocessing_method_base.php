@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (C) 2018 E-ComProcessing Ltd.
+ * Copyright (C) 2018 E-Comprocessing Ltd.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -12,8 +12,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * @author      E-ComProcessing Ltd.
- * @copyright   2018 E-ComProcessing Ltd.
+ * @author      E-Comprocessing Ltd.
+ * @copyright   2018 E-Comprocessing Ltd.
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
 
@@ -22,7 +22,7 @@ if (!defined( 'ABSPATH' )) {
 }
 
 /**
- * EComProcessing Base Method
+ * EComprocessing Base Method
  *
  * @class   WC_EComProcessing_Method
  * @extends WC_Payment_Gateway
@@ -1328,7 +1328,7 @@ abstract class WC_EComProcessing_Method extends WC_Payment_Gateway
                 'type'        => 'textarea',
                 'title'       => static::getTranslatedText('Description:'),
                 'description' => static::getTranslatedText('Text describing this payment method to the customer, during checkout.'),
-                'default'     => static::getTranslatedText('Pay safely through E-ComProcessing\'s Secure Gateway.'),
+                'default'     => static::getTranslatedText('Pay safely through E-Comprocessing\'s Secure Gateway.'),
                 'desc_tip'    => true
             ),
             'api_credentials'   => array(

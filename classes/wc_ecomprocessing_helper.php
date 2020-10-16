@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (C) 2018 E-ComProcessing Ltd.
+ * Copyright (C) 2018 E-Comprocessing Ltd.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -12,8 +12,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * @author      E-ComProcessing Ltd.
- * @copyright   2018 E-ComProcessing Ltd.
+ * @author      E-Comprocessing Ltd.
+ * @copyright   2018 E-Comprocessing Ltd.
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
 
@@ -24,7 +24,7 @@ if (!defined( 'ABSPATH' )) {
 use \Genesis\API\Request\Financial\Alternatives\Klarna\Item as KlarnaItem;
 
 /**
- * EComProcessing Helper Class
+ * EComprocessing Helper Class
  *
  * @class   WC_EComProcessing_Helper
 

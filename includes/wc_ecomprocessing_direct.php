@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (C) 2018 E-ComProcessing Ltd.
+ * Copyright (C) 2018 E-Comprocessing Ltd.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -12,8 +12,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * @author      E-ComProcessing Ltd.
- * @copyright   2018 E-ComProcessing Ltd.
+ * @author      E-Comprocessing Ltd.
+ * @copyright   2018 E-Comprocessing Ltd.
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
 
@@ -26,7 +26,7 @@ if (!class_exists('WC_EComProcessing_Method')) {
 }
 
 /**
- * EComProcessing Direct
+ * EComprocessing Direct
  *
  * @class   WC_EComProcessing_Direct
  * @extends WC_Payment_Gateway
@@ -56,7 +56,7 @@ class WC_EComProcessing_Direct extends WC_EComProcessing_Method
      */
     protected function getModuleTitle()
     {
-        return static::getTranslatedText('E-ComProcessing Direct');
+        return static::getTranslatedText('E-Comprocessing Direct');
     }
 
     /**
@@ -217,7 +217,7 @@ class WC_EComProcessing_Direct extends WC_EComProcessing_Method
     {
         // Admin description
         $this->method_description   =
-            static::getTranslatedText('E-ComProcessing\'s Gateway offers a secure way to pay for your order, using Credit/Debit Card.') .
+            static::getTranslatedText('E-Comprocessing\'s Gateway offers a secure way to pay for your order, using Credit/Debit Card.') .
             '<br />' .
             static::getTranslatedText('Direct API - allow customers to enter their CreditCard information on your website.') .
             '<br />' .
