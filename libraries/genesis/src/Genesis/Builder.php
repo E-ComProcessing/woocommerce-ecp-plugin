@@ -20,6 +20,7 @@
  *
  * @license     http://opensource.org/licenses/MIT The MIT License
  */
+
 namespace Genesis;
 
 /**
@@ -30,6 +31,21 @@ namespace Genesis;
  */
 class Builder
 {
+    /**
+     * XML Builder Identifier
+     */
+    const XML  = 'xml';
+
+    /**
+     * JSON Builder Identifier
+     */
+    const JSON = 'json';
+
+    /**
+     * FORM Builder Identifier
+     */
+    const FORM = 'form';
+
     /**
      * Instance of the selected builder wrapper
      *
@@ -49,11 +65,14 @@ class Builder
 
         switch ($interface) {
             default:
-            case 'xml':
+            case self::XML:
                 $this->context = new Builders\XML();
                 break;
-            case 'json':
+            case self::JSON:
                 $this->context = new Builders\JSON();
+                break;
+            case self::FORM:
+                $this->context = new Builders\FORM();
                 break;
         }
     }
@@ -72,6 +91,7 @@ class Builder
      * Parse tree-structure into Builder document
      *
      * @param array $structure
+     * @throws Exceptions\InvalidArgument
      */
     public function parseStructure(array $structure)
     {

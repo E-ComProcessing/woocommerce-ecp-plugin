@@ -23,6 +23,13 @@
 
 namespace Genesis\API\Request\Financial\Alternatives\Trustly;
 
+use Genesis\API\Request\Base\Financial;
+use Genesis\API\Traits\Request\AddressInfoAttributes;
+use Genesis\API\Traits\Request\Financial\BirthDateAttributes;
+use Genesis\API\Traits\Request\Financial\AsyncAttributes;
+use Genesis\API\Traits\Request\Financial\PaymentAttributes;
+use Genesis\API\Traits\RestrictedSetter;
+
 /**
  * Class Withdrawal
  *
@@ -30,8 +37,10 @@ namespace Genesis\API\Request\Financial\Alternatives\Trustly;
  *
  * @package Genesis\API\Request\Financial\Alternatives\Trustly
  */
-class Withdrawal extends \Genesis\API\Request\Financial\Alternatives\Trustly\Sale
+class Withdrawal extends Financial
 {
+    use AsyncAttributes, PaymentAttributes, AddressInfoAttributes, RestrictedSetter, BirthDateAttributes;
+
     /**
      * Returns the Request transaction type
      * @return string
@@ -52,7 +61,6 @@ class Withdrawal extends \Genesis\API\Request\Financial\Alternatives\Trustly\Sal
 
         $requiredFields = [
             'transaction_id',
-            'remote_ip',
             'amount',
             'currency',
             'return_success_url',
@@ -63,5 +71,33 @@ class Withdrawal extends \Genesis\API\Request\Financial\Alternatives\Trustly\Sal
         ];
 
         $this->requiredFields = \Genesis\Utils\Common::createArrayObject($requiredFields);
+
+        $requiredFieldValues = [
+            'billing_country' => [
+                'AT', 'BG', 'BE', 'HR', 'CZ', 'CY', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IT', 'IE', 'LT', 'LV',
+                'LU', 'MT', 'NO',  'NL', 'PT', 'PL', 'RO', 'SK', 'SI', 'SE', 'ES', 'GB'
+            ],
+            'currency'        => \Genesis\Utils\Currency::getList()
+        ];
+
+        $this->requiredFieldValues = \Genesis\Utils\Common::createArrayObject($requiredFieldValues);
+    }
+
+    protected function getPaymentTransactionStructure()
+    {
+        return array_merge(
+            $this->getPaymentAttributesStructure(),
+            [
+                'return_success_url'        => $this->return_success_url,
+                'return_failure_url'        => $this->return_failure_url,
+                'amount'                    => $this->transformAmount($this->amount, $this->currency),
+                'currency'                  => $this->currency,
+                'customer_email'            => $this->customer_email,
+                'customer_phone'            => $this->customer_phone,
+                'birth_date'                => $this->getBirthDate(),
+                'billing_address'           => $this->getBillingAddressParamsStructure(),
+                'shipping_address'          => $this->getShippingAddressParamsStructure()
+            ]
+        );
     }
 }

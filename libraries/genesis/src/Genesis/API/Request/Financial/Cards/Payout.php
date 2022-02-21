@@ -23,9 +23,12 @@
 
 namespace Genesis\API\Request\Financial\Cards;
 
-use Genesis\API\Traits\Request\Financial\PaymentAttributes;
-use Genesis\API\Traits\Request\CreditCardAttributes;
+use Genesis\API\Traits\Request\DocumentAttributes;
+use Genesis\API\Traits\Request\Financial\DescriptorAttributes;
+use Genesis\API\Traits\Request\Financial\FxRateAttributes;
 use Genesis\API\Traits\Request\AddressInfoAttributes;
+use Genesis\API\Traits\Request\Financial\SourceOfFundsAttributes;
+use Genesis\API\Traits\RestrictedSetter;
 
 /**
  * Class Payout
@@ -34,9 +37,11 @@ use Genesis\API\Traits\Request\AddressInfoAttributes;
  *
  * @package Genesis\API\Request\Financial\Cards
  */
-class Payout extends \Genesis\API\Request\Base\Financial
+class Payout extends \Genesis\API\Request\Base\Financial\Cards\CreditCard
 {
-    use PaymentAttributes, CreditCardAttributes, AddressInfoAttributes;
+    use RestrictedSetter, AddressInfoAttributes, DocumentAttributes,
+        SourceOfFundsAttributes, FxRateAttributes, DescriptorAttributes;
+
 
     /**
      * Returns the Request transaction type
@@ -54,47 +59,31 @@ class Payout extends \Genesis\API\Request\Base\Financial
      */
     protected function setRequiredFields()
     {
-        $requiredFields = [
-            'transaction_id',
-            'amount',
-            'currency',
-            'card_holder',
-            'card_number',
-            'expiration_month',
-            'expiration_year'
-        ];
+        parent::setRequiredFields();
 
-        $this->requiredFields = \Genesis\Utils\Common::createArrayObject($requiredFields);
+        $requiredFieldsConditional = $this->requiredTokenizationFieldsConditional() +
+                                     $this->requiredCCFieldsConditional();
 
-        $requiredFieldValues = array_merge(
-            [
-                'currency' => \Genesis\Utils\Currency::getList()
-            ],
-            $this->getCCFieldValueFormatValidators()
-        );
-
-        $this->requiredFieldValues = \Genesis\Utils\Common::createArrayObject($requiredFieldValues);
+        $this->requiredFieldsConditional = \Genesis\Utils\Common::createArrayObject($requiredFieldsConditional);
     }
 
     /**
      * Return additional request attributes
      * @return array
      */
-    protected function getPaymentTransactionStructure()
+    protected function getTransactionAttributes()
     {
-        return [
-            'amount'           => $this->transformAmount($this->amount, $this->currency),
-            'currency'         => $this->currency,
-            'card_holder'      => $this->card_holder,
-            'card_number'      => $this->card_number,
-            'cvv'              => $this->cvv,
-            'expiration_month' => $this->expiration_month,
-            'expiration_year'  => $this->expiration_year,
-            'customer_email'   => $this->customer_email,
-            'customer_phone'   => $this->customer_phone,
-            'birth_date'       => $this->birth_date,
-            'billing_address'  => $this->getBillingAddressParamsStructure(),
-            'shipping_address' => $this->getShippingAddressParamsStructure()
-        ];
+        return array_merge(
+            [
+                'customer_email'            => $this->customer_email,
+                'customer_phone'            => $this->customer_phone,
+                'document_id'               => $this->document_id,
+                'billing_address'           => $this->getBillingAddressParamsStructure(),
+                'shipping_address'          => $this->getShippingAddressParamsStructure(),
+                'fx_rate_id'                => $this->fx_rate_id,
+                'dynamic_descriptor_params' => $this->getDynamicDescriptorParamsStructure()
+            ],
+            $this->getSourceOfFundsStructure()
+        );
     }
 }

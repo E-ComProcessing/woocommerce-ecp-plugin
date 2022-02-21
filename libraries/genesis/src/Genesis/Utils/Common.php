@@ -22,6 +22,8 @@
  */
 namespace Genesis\Utils;
 
+use Genesis\Exceptions\Exception;
+
 /**
  * Various helper functions used across the project
  *
@@ -131,14 +133,19 @@ final class Common
      * remove every key with empty value
      *
      * @param array $haystack - input array
+     * @param array $skipEmptyKeys
      *
      * @return array
      */
-    public static function emptyValueRecursiveRemoval($haystack)
+    public static function emptyValueRecursiveRemoval($haystack, $skipEmptyKeys = array())
     {
         foreach ($haystack as $key => $value) {
             if (is_array($value)) {
-                $haystack[$key] = self::emptyValueRecursiveRemoval($haystack[$key]);
+                $haystack[$key] = self::emptyValueRecursiveRemoval($haystack[$key], $skipEmptyKeys);
+            }
+
+            if (in_array($key, $skipEmptyKeys, true) && !is_null($value)) {
+                continue;
             }
 
             if (empty($haystack[$key])) {
@@ -293,7 +300,7 @@ final class Common
      *
      * @return bool | string
      */
-    public static function stringToBoolean($string)
+    public static function filterBoolean($string)
     {
         $flag = filter_var($string, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
 
@@ -415,5 +422,51 @@ final class Common
     public static function endsWith($str, $suffix)
     {
         return stripos($str, $suffix) === strlen($str) - strlen($suffix);
+    }
+
+    /**
+     * Filter language input value
+     *
+     * @param $language
+     * @return string
+     */
+    public static function filterLanguageCode($language)
+    {
+        return (string) substr(strtolower($language), 0, 2);
+    }
+
+    /**
+     * Cast string to boolean
+     *
+     * @param string|bool $string
+     * @return bool
+     */
+    public static function toBoolean($string)
+    {
+        $filterBoolean = static::filterBoolean($string);
+
+        return (is_bool($filterBoolean)) ? $filterBoolean : (bool) $filterBoolean;
+    }
+
+    /**
+     * Remove specific keys from given arrayObject
+     *
+     * @param array $arrayKeys
+     * @param \ArrayObject $arrayObject
+     * @return \ArrayObject
+     */
+    public static function removeMultipleKeys($arrayKeys, $arrayObject)
+    {
+        if (!self::isValidArray($arrayKeys) || !$arrayObject instanceof \ArrayObject) {
+            throw new Exception();
+        }
+
+        foreach ($arrayKeys as $key) {
+            if (array_key_exists($key, $arrayObject)) {
+                unset($arrayObject->{$key});
+            }
+        }
+
+        return $arrayObject;
     }
 }

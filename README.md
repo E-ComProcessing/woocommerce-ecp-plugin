@@ -6,11 +6,11 @@ This is a Payment Module for WooCommerce that gives you the ability to process p
 Requirements
 ------------
 
-* WordPress 4.x (Tested up to 4.9.7)
-* WooCommerce 2.x or 3.x (Tested up to 3.4.3)
-* [GenesisPHP v1.10.1](https://github.com/GenesisGateway/genesis_php/releases/tag/1.10.1) - (Integrated in Module)
+* WordPress 4.x or 5.x (Tested up to 5.9)
+* WooCommerce 3.x, 4.x, 5.x, 6.x (Tested up to 6.1.1)
+* [GenesisPHP v1.19.2](https://github.com/GenesisGateway/genesis_php/releases/tag/1.19.2) - (Integrated in Module)
 * PCI-certified server in order to use ```E-Comprocessing Direct```
-* [WooCommerce Subscription Extension](https://woocommerce.com/products/woocommerce-subscriptions/) 2.x (Tested up to 2.2.13) in order to use **Subscriptions**
+* [WooCommerce Subscription Extension](https://woocommerce.com/products/woocommerce-subscriptions/) 2.x, 3.x, 4.x (Tested up to 4.0.1) in order to use **Subscriptions**
 
 GenesisPHP Requirements
 ------------
@@ -31,7 +31,7 @@ Installation
 * Navigate to ```Plugins -> Add New```
 * Install through the Marketplace/ Select the downloaded ```.zip``` File
 * Activate the newly installed ```WooCommerce E-Comprocessing Payment Gateway Client``` plugin
-* Navigate to ```WooCommerce -> Settings -> Checkout``` 
+* Navigate to ```WooCommerce -> Settings -> Payment``` 
 * Select your preferred payment method ```E-Comprocessing Checkout``` or ```E-Comprocessing Direct```
 * Check ```Enable```, set the correct credentials and click "Save changes"
 
@@ -40,8 +40,10 @@ Enable WooCommerce Secure Checkout
 This steps should be followed if you wish to use the ```E-Comprocessing Direct``` Method
 * Ensure you have installed and configured a SSL Certificate on your PCI-DSS Certified Server
 * Login into your WordPress Admin Panel with Administrator privileges
-* Navigate to ```WooCommerce``` - > ```Settings``` -> ```Checkout```
-* In Section ```Checkout Process``` check ```Force secure checkout```
+* Navigate to ```WooCommerce``` - > ```Settings``` -> ```Advanced```
+* In Section ```Page Setup``` check ```Force secure checkout```
+
+__If you are using Tokenization for Web Payment Form, please make sure Guest Checkout is disabled.__
 
 Subscriptions
 ------------
@@ -103,6 +105,21 @@ and add the following line to execute the **WordPress Cron** once per 10 Minutes
 */10 * * * * cd /path/to/wordpress/root && php -q wp-cron.php
 ```
 
+Refunds
+------------
+There are two ways of doing Refunds.
+
+* Using integrated WooCommerce Refund functionality
+
+    In that way, you can create a partial or full refund with restocking the desired items. This will create a WooCommerce Refund event.
+    Partial or Full refund e-mail will be sent to the customer. 
+    You should choose the "Refund via E-Comprocessing Checkout/Direct" button if you want to send that refund to the Genesis Gateway.
+
+* Using the ecomprocessing Transaction List Table
+    
+    In that way, you will send a Refund to the Genesis Gateway without affecting the Order, unless the refund is not a full one. 
+    If the full amount is refunded then the Order will become with status Refunded.   
+
 Supported Transactions
 ------------
 * ```E-Comprocessing Direct``` Payment Method
@@ -115,46 +132,71 @@ Supported Transactions
 	* __Sale (3D-Secure)__
 
 * ```E-Comprocessing Checkout``` Payment Method
-    * __Alipay__
+    * __Argencard__
+    * __Aura__
     * __Authorize__
     * __Authorize (3D-Secure)__
+    * __Baloto__
+    * __Bancomer__
+    * __Bancontact__
+    * __Banco de Occidente__
+    * __Banco do Brasil__
+    * __BitPay__
+    * __Boleto__
+    * __Bradesco__
+    * __Cabal__
     * __CashU__
-    * __Citadel__
+    * __Cencosud__
+    * __Davivienda__
+    * __Efecty__
+    * __Elo__
+    * __eps__
     * __eZeeWallet__
     * __Fashioncheque__
+    * __GiroPay__
+    * __GooglePay__
+    * __iDeal__
     * __iDebit__
     * __InstaDebit__
     * __InitRecurringSale__
     * __InitRecurringSale (3D-Secure)__
     * __Intersolve__
+    * __Itau__
     * __Klarna__
+    * __Multibanco__
+    * __MyBank__
+    * __Naranja__
+    * __Nativa__
+    * __Neosurf__
     * __Neteller__
+    * __Online Banking__
+    * __OXXO__
     * __P24__
-    * __PayByVoucher (Sale)__
-    * __PayByVoucher (oBeP)__
+    * __Pago Facil__
     * __PayPal Express__
     * __PaySafeCard__
-    * __PaySec__
+    * __PayU__
     * __POLi__
+    * __Post Finance__
     * __PPRO__
-    	* __eps__
-    	* __GiroPay__
-    	* __Qiwi__
-    	* __Przelewy24__
-    	* __SafetyPay__
-    	* __TrustPay__
-    	* __Mr.Cash__
-    	* __MyBank__
-    * __RecurringSale__
+    * __PSE__
+    * __RapiPago__
+    * __Redpagos__
+    * __SafetyPay__
     * __Sale__
     * __Sale (3D-Secure)__
+    * __Santander__
     * __Sepa Direct Debit__
     * __SOFORT__
+    * __Tarjeta Shopping__
     * __TCS__
     * __Trustly__
+    * __TrustPay__
+    * __UPI__
     * __WebMoney__
+    * __WebPay__
     * __WeChat__
-    
+        
 _Note_: If you have trouble with your credentials or terminal configuration, get in touch with our [support] team
 
 You're now ready to process payments through our gateway.

@@ -22,13 +22,21 @@
  */
 namespace Genesis\API\Request\WPF;
 
+use Genesis\API\Constants\i18n;
 use Genesis\API\Constants\Transaction\Types;
+use Genesis\API\Traits\Request\Financial\PendingPaymentAttributes;
+use Genesis\API\Traits\Request\Financial\Business\BusinessAttributes;
 use Genesis\API\Traits\Request\Financial\PaymentAttributes;
 use Genesis\API\Traits\Request\AddressInfoAttributes;
 use Genesis\API\Traits\Request\Financial\AsyncAttributes;
 use Genesis\API\Traits\Request\Financial\NotificationAttributes;
+use Genesis\API\Traits\Request\Financial\Threeds\V2\WpfAttributes as WpfThreedsV2Attributes;
 use Genesis\API\Traits\Request\RiskAttributes;
 use Genesis\API\Traits\Request\Financial\DescriptorAttributes;
+use Genesis\API\Traits\RestrictedSetter;
+use Genesis\Exceptions\ErrorParameter;
+use Genesis\Exceptions\InvalidArgument;
+use Genesis\Utils\Common;
 use Genesis\Utils\Common as CommonUtils;
 
 /**
@@ -37,53 +45,256 @@ use Genesis\Utils\Common as CommonUtils;
  * @package    Genesis
  * @subpackage Request
  *
- * @method $this setTransactionId($value) Set a Unique Transaction id
- * @method $this setUsage($value) Set the description of the transaction for later use
- * @method $this setDescription($value) Set a text describing the reason of the payment
-
- * @method $this setReturnCancelUrl($value) Set the  URL where the customer is sent to after they cancel the payment
+ * @codingStandardsIgnoreStart
+ * @method $this  setTransactionId($value)   Set a Unique Transaction id
+ * @method $this  setUsage($value)           Set the description of the transaction for later use
+ * @method $this  setDescription($value)     Set a text describing the reason of the payment
+ * @method $this  setReturnCancelUrl($value) Set the  URL where the customer is sent to after they cancel the payment
+ * @method $this  setConsumerId($value)      Saved cards will be listed for user to select
+ * @method string getTransactionId()         Identifier of the transaction
+ * @method string getUsage()                 Statement, as it appears in the customer’s bank statement
+ * @method string getDescription()           A text describing the reason of the payment
+ * @method string getReturnCancelUrl()       URL where the customer is sent to after they cancel the payment
+ * @method bool   getRememberCard()          Offer the user the option to save cardholder details for future use (tokenize)
+ * @method string getConsumerId()            Check documentation section Consumers and Tokenization. Saved cards will be listed for user to select
+ * @method string getLifetime()              Number of minutes determining how long the WPF will be valid
+ * @method string getReminders()             Settings for reminders sending when using the ’Pay Later’ feature
+ * @method bool   getScaPreference()         Signifies whether to perform SCA on the transaction
+ * @codingStandardsIgnoreEnd
+ *
+ * @SuppressWarnings(PHPMD.LongVariable)
  */
 class Create extends \Genesis\API\Request
 {
     use PaymentAttributes, AddressInfoAttributes, AsyncAttributes,
-        NotificationAttributes, RiskAttributes, DescriptorAttributes;
+        NotificationAttributes, RiskAttributes, DescriptorAttributes,
+        RestrictedSetter, BusinessAttributes, PendingPaymentAttributes, WpfThreedsV2Attributes;
+
+    const REMINDERS_CHANNEL_EMAIL      = 'email';
+    const REMINDERS_CHANNEL_SMS        = 'sms';
+    const MIN_ALLOWED_REMINDER_MINUTES = 1;
+    const MAX_ALLOWED_REMINDER_DAYS    = 31;
+
+    /**
+     * Default Lifetime in minutes
+     * Used when lifetime is not set
+     */
+    const DEFAULT_LIFETIME             = 30;
 
     /**
      * unique transaction id defined by merchant
      *
-     * @var string
+     * @var string $transaction_id
      */
     protected $transaction_id;
 
     /**
      * Statement, as it appears in the customer’s bank statement
      *
-     * @var string
+     * @var string $usage
      */
     protected $usage;
+
+    /**
+     * Check documentation section Tokenize. Offer the user the option to save
+     * cardholder details for future use (tokenize).
+     *
+     * @var string $remember_card
+     */
+    protected $remember_card = false;
+
+    /**
+     * Check documentation section Consumers and Tokenization. Saved cards will be listed for user to select
+     *
+     * @var string $consumer_id
+     */
+    protected $consumer_id;
 
     /**
      * a text describing the reason of the payment
      *
      * e.g. "you’re buying concert tickets"
      *
-     * @var string
+     * @var string $description
      */
     protected $description;
 
     /**
      * URL where the customer is sent to after they cancel the payment
      *
-     * @var string
+     * @var string $return_cancel_url
      */
     protected $return_cancel_url;
 
     /**
+     * Number of minutes determining how long the WPF will be valid.
+     * Will be set to 30 minutes by default.
+     * Valid value ranges between 1 minute and 31 days given in minutes
+     *
+     * @var int $lifetime
+     */
+    protected $lifetime = self::DEFAULT_LIFETIME;
+
+    /**
+     * Signifies whether the ’Pay Later’ feature would be enabled on the WPF
+     *
+     * @var bool $pay_later
+     */
+    protected $pay_later = false;
+
+    /**
+     * The language of reminders
+     *
+     * @var $reminder_language
+     */
+    protected $reminder_language;
+
+    /**
+     * Settings for reminders sending when using the ’Pay Later’ feature
+     *
+     * @var array $reminders
+     */
+    protected $reminders = [];
+
+    /**
      * The transaction types that the merchant is willing to accept payments for
      *
-     * @var array
+     * @var array $transaction_types
      */
     protected $transaction_types = [];
+
+    /**
+     * Language code in ISO-639-1
+     *
+     * @var $language
+     */
+    protected $language;
+
+    /**
+     * Signifies whether to perform SCA on the transaction. At least one 3DS transaction type has to be submitted.
+     *
+     * @var bool $sca_preference
+     */
+    protected $sca_preference;
+
+    /**
+     * @param bool $flag
+     *
+     * @return Create
+     */
+    public function setRememberCard($flag)
+    {
+        $this->remember_card = (bool) $flag;
+
+        return $this;
+    }
+
+    /**
+     * Number of minutes determining how long the WPF will be valid.
+     * Will be set to 30 minutes by default.
+     * Valid value ranges between 1 minute and 31 days given in minutes
+     * @param int $lifetime
+     * @throws InvalidArgument
+     * @return $this
+     */
+    public function setLifetime($lifetime)
+    {
+        $lifetime = intval($lifetime);
+
+        if ($lifetime < 1 || $lifetime > 44640) {
+            throw new InvalidArgument('Valid value ranges between 1 minute and 31 days given in minutes');
+        }
+
+        $this->lifetime = $lifetime;
+
+        return $this;
+    }
+
+    /**
+     * @param bool $flag
+     *
+     * @return Create
+     */
+    public function setPayLater($flag)
+    {
+        $this->pay_later = (bool) $flag;
+
+        return $this;
+    }
+
+    public function setReminderLanguage($value)
+    {
+        // Strip the input down to two letters
+        $language = Common::filterLanguageCode($value);
+
+        $this->allowedOptionsSetter(
+            'reminder_language',
+            i18n::getAll(),
+            $language,
+            'Reminder Language value is not valid ISO-639-1 language code.'
+        );
+
+        $this->reminder_language = $language;
+
+        return $this;
+    }
+
+    /**
+     * @param $channel
+     * @param $after
+     *
+     * @return Create
+     * @throws ErrorParameter
+     */
+    public function addReminder($channel, $after)
+    {
+        if (count($this->reminders) === 3) {
+            throw new ErrorParameter(
+                'Maximum number of 3 allowed reminders reached. You can\'t add more reminders.'
+            );
+        }
+
+        $after = (int) $after;
+
+        if ($after < self::MIN_ALLOWED_REMINDER_MINUTES || $after > self::MAX_ALLOWED_REMINDER_DAYS * 24 * 60) {
+            throw new ErrorParameter('After parameter must be between 1 minute and 31 days in minutes.');
+        }
+
+        $allowedChannels = [self::REMINDERS_CHANNEL_EMAIL, self::REMINDERS_CHANNEL_SMS];
+
+        if (!in_array($channel, $allowedChannels)) {
+            throw new ErrorParameter('Invalid channel value. Allowed are ' . implode(', ', $allowedChannels));
+        }
+
+        $this->reminders[] = [
+            'reminder' => [
+                'channel' => $channel,
+                'after'   => $after
+            ]
+        ];
+
+        return $this;
+    }
+
+    /**
+     * Clears all reminders
+     */
+    public function clearReminders()
+    {
+        $this->reminders = [];
+    }
+
+    /**
+     * @return array
+     */
+    protected function getRemindersStructure()
+    {
+        if ($this->pay_later === false) {
+            return [];
+        }
+
+        return $this->reminders;
+    }
 
     /**
      * Add transaction type to the list of available types
@@ -108,6 +319,19 @@ class Create extends \Genesis\API\Request
         ];
 
         array_push($this->transaction_types, $structure);
+
+        return $this;
+    }
+
+    /**
+     * Signifies whether to perform SCA on the transaction
+     *
+     * @param mixed $value
+     * @return Create
+     */
+    public function setScaPreference($value)
+    {
+        $this->sca_preference = CommonUtils::toBoolean($value);
 
         return $this;
     }
@@ -139,7 +363,9 @@ class Create extends \Genesis\API\Request
             return;
         }
 
-        if (!CommonUtils::isValidArray($parameters)) {
+        $txnCustomRequiredParams = static::validateNativeCustomParameters($transactionType, $txnCustomRequiredParams);
+
+        if (CommonUtils::isValidArray($txnCustomRequiredParams) && !CommonUtils::isValidArray($parameters)) {
             throw new \Genesis\Exceptions\ErrorParameter(
                 sprintf(
                     'Custom transaction parameters (%s) are required and none are set.',
@@ -156,6 +382,30 @@ class Create extends \Genesis\API\Request
                 $parameters
             );
         }
+    }
+
+    /**
+     * @param string $transactionType
+     * @param array $txnCustomRequiredParams
+     *
+     * @return array
+     */
+    protected function validateNativeCustomParameters($transactionType, $txnCustomRequiredParams)
+    {
+        foreach ($txnCustomRequiredParams as $customRequiredParam => $customRequiredParamValues) {
+            if (property_exists($this, $customRequiredParam)) {
+                $this->validateRequiredParameter(
+                    $transactionType,
+                    $customRequiredParam,
+                    $customRequiredParamValues,
+                    [ $customRequiredParam => $this->{$customRequiredParam} ]
+                );
+
+                unset($txnCustomRequiredParams[$customRequiredParam]);
+            }
+        }
+
+        return $txnCustomRequiredParams;
     }
 
     protected function validateRequiredParameter(
@@ -262,20 +512,20 @@ class Create extends \Genesis\API\Request
      */
     public function setLanguage($language = \Genesis\API\Constants\i18n::EN)
     {
-        // Strip the input down to two letters
-        $language = substr(strtolower($language), 0, 2);
+        $language = CommonUtils::filterLanguageCode($language);
 
-        if (!\Genesis\API\Constants\i18n::isValidLanguageCode($language)) {
-            throw new \Genesis\Exceptions\InvalidArgument(
-                'The provided argument is not a valid ISO-639-1 language code!'
-            );
-        }
+        $this->allowedOptionsSetter(
+            'language',
+            i18n::getAll(),
+            $language,
+            'Invalid ISO-639-1 language code.'
+        );
 
         $this->setApiConfig(
             'url',
             $this->buildRequestURL(
                 'wpf',
-                sprintf('%s/wpf', $language),
+                sprintf('%s/wpf', $this->language),
                 false
             )
         );
@@ -293,6 +543,16 @@ class Create extends \Genesis\API\Request
         $this->initXmlConfiguration();
 
         $this->setApiConfig('url', $this->buildRequestURL('wpf', 'wpf', false));
+    }
+
+    /**
+     * Transaction Request with zero amount is allowed
+     *
+     * @return bool
+     */
+    protected function allowedZeroAmount()
+    {
+        return true;
     }
 
     /**
@@ -315,6 +575,30 @@ class Create extends \Genesis\API\Request
         ];
 
         $this->requiredFields = \Genesis\Utils\Common::createArrayObject($requiredFields);
+
+        $requiredFieldsConditional = [
+            'remember_card' => [
+                true => [
+                    'customer_email'
+                ]
+            ],
+            'consumer_id'   => [
+                'customer_email'
+            ]
+        ];
+
+        $this->requiredFieldsConditional = CommonUtils::createArrayObject($requiredFieldsConditional);
+    }
+
+    protected function checkRequirements()
+    {
+        $requiredFieldsValuesConditional = $this->getThreedsV2FieldValuesValidations();
+
+        $this->requiredFieldValuesConditional = CommonUtils::createArrayObject($requiredFieldsValuesConditional);
+
+        parent::checkRequirements();
+
+        $this->validateReminders();
     }
 
     /**
@@ -337,20 +621,56 @@ class Create extends \Genesis\API\Request
                 'currency'                  => $this->currency,
                 'usage'                     => $this->usage,
                 'description'               => $this->description,
+                'consumer_id'               => $this->consumer_id,
                 'customer_email'            => $this->customer_email,
                 'customer_phone'            => $this->customer_phone,
                 'notification_url'          => $this->notification_url,
                 'return_success_url'        => $this->return_success_url,
                 'return_failure_url'        => $this->return_failure_url,
                 'return_cancel_url'         => $this->return_cancel_url,
+                'return_pending_url'        => $this->return_pending_url,
                 'billing_address'           => $this->getBillingAddressParamsStructure(),
                 'shipping_address'          => $this->getShippingAddressParamsStructure(),
+                'remember_card'             => var_export($this->remember_card, true),
                 'transaction_types'         => $this->transaction_types,
+                'lifetime'                  => $this->lifetime,
                 'risk_params'               => $this->getRiskParamsStructure(),
-                'dynamic_descriptor_params' => $this->getDynamicDescriptorParamsStructure()
+                'dynamic_descriptor_params' => $this->getDynamicDescriptorParamsStructure(),
+                'pay_later'                 => var_export($this->pay_later, true),
+                'reminder_language'         => $this->reminder_language,
+                'reminders'                 => $this->getRemindersStructure(),
+                'business_attributes'       => $this->getBusinessAttributesStructure(),
+                'sca_preference'            => $this->sca_preference,
+                'threeds_v2_params'         => $this->getThreedsV2ParamsStructure()
             ]
         ];
 
         $this->treeStructure = \Genesis\Utils\Common::createArrayObject($treeStructure);
+    }
+
+    /**
+     * Validates Reminders
+     *
+     * @throws ErrorParameter
+     */
+    protected function validateReminders()
+    {
+        $reminders = $this->getRemindersStructure();
+
+        if (empty($reminders)) {
+            return;
+        }
+
+        foreach ($reminders as $value) {
+            if ($value['reminder']['after'] >= $this->lifetime) {
+                throw new ErrorParameter(
+                    sprintf(
+                        'Reminder (%dmin) could not be greater than or equal to lifetime (%dmin).',
+                        $value['reminder']['after'],
+                        $this->lifetime
+                    )
+                );
+            }
+        }
     }
 }
