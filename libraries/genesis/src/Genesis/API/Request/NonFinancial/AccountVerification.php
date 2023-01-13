@@ -30,7 +30,7 @@ use Genesis\API\Traits\Request\DocumentAttributes;
 use Genesis\API\Traits\Request\Financial\CredentialOnFileAttributes;
 use Genesis\API\Traits\Request\MotoAttributes;
 use Genesis\API\Traits\Request\RiskAttributes;
-use Genesis\API\Traits\RestrictedSetter;
+use Genesis\Exceptions\InvalidArgument;
 use Genesis\Utils\Common as CommonUtils;
 
 /**
@@ -42,7 +42,7 @@ use Genesis\Utils\Common as CommonUtils;
 class AccountVerification extends \Genesis\API\Request
 {
     use BaseAttributes, MotoAttributes, CreditCardAttributes, AddressInfoAttributes, RiskAttributes,
-        DocumentAttributes, CredentialOnFileAttributes, RestrictedSetter;
+        DocumentAttributes, CredentialOnFileAttributes;
 
     /**
      * Set the per-request configuration
@@ -74,11 +74,11 @@ class AccountVerification extends \Genesis\API\Request
             'billing_city'
         ];
 
-        $this->requiredFields = \Genesis\Utils\Common::createArrayObject($requiredFields);
+        $this->requiredFields = CommonUtils::createArrayObject($requiredFields);
 
         $requiredFieldValues = $this->getCCFieldValueFormatValidators();
 
-        $this->requiredFieldValues = \Genesis\Utils\Common::createArrayObject($requiredFieldValues);
+        $this->requiredFieldValues = CommonUtils::createArrayObject($requiredFieldValues);
     }
 
     /**
@@ -104,7 +104,7 @@ class AccountVerification extends \Genesis\API\Request
                     'customer_email'   => $this->customer_email,
                     'customer_phone'   => $this->customer_phone,
                     'document_id'      => $this->document_id,
-                    'birth_date'       => $this->birth_date,
+                    'birth_date'       => $this->getBirthDate(),
                     'billing_address'  => $this->getBillingAddressParamsStructure(),
                     'shipping_address' => $this->getShippingAddressParamsStructure(),
                     'risk_params'      => $this->getRiskParamsStructure()
@@ -113,17 +113,27 @@ class AccountVerification extends \Genesis\API\Request
             )
         ];
 
-        $this->treeStructure = \Genesis\Utils\Common::createArrayObject($treeStructure);
+        $this->treeStructure = CommonUtils::createArrayObject($treeStructure);
     }
 
     /**
      * Skip Credit Card validation if Client-Side Encryption is set
+     * Add document_id conditional validation if it is present
      *
      * @return void
+     * @throws InvalidArgument
+     * @throws \Genesis\Exceptions\ErrorParameter
+     * @throws \Genesis\Exceptions\InvalidClassMethod
      */
     protected function checkRequirements()
     {
         $this->removeCreditCardValidations();
+
+        if ($this->document_id) {
+            $this->requiredFieldValuesConditional = CommonUtils::createArrayObject(
+                $this->getDocumentIdConditions()
+            );
+        }
 
         parent::checkRequirements();
     }

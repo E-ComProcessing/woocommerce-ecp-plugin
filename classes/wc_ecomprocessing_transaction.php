@@ -24,11 +24,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * ecomprocessing Helper Class
  *
- * @class WC_EComprocessing_Transaction
+ * @class WC_ecomprocessing_Transaction
  *
  * @SuppressWarnings(PHPMD)
  */
-class WC_EComprocessing_Transaction {
+class WC_ecomprocessing_Transaction {
 
 	const TYPE_CHECKOUT = 'checkout';
 
@@ -53,7 +53,7 @@ class WC_EComprocessing_Transaction {
 	/**
 	 * Import a Genesis Response Object
 	 *
-	 * @param stdClass|WC_EComprocessing_Transaction $trx
+	 * @param stdClass|WC_ecomprocessing_Transaction $trx
 	 */
 	public function importResponse( $trx ) {
 		if ( isset( $trx->unique_id ) ) {
@@ -127,6 +127,8 @@ class WC_EComprocessing_Transaction {
 	 */
 	public function isAuthorize() {
 		return \Genesis\API\Constants\Transaction\Types::isAuthorize( $this->type ) ||
-		       \Genesis\API\Constants\Transaction\Types::GOOGLE_PAY === $this->type;
+			\Genesis\API\Constants\Transaction\Types::GOOGLE_PAY === $this->type ||
+			\Genesis\API\Constants\Transaction\Types::PAY_PAL === $this->type ||
+			\Genesis\API\Constants\Transaction\Types::APPLE_PAY === $this->type;
 	}
 }

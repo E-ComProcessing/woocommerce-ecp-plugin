@@ -28,7 +28,10 @@ use Genesis\API\Traits\Request\AddressInfoAttributes;
 use Genesis\API\Traits\Request\Financial\AsyncAttributes;
 use Genesis\API\Traits\Request\Financial\BankAttributes;
 use Genesis\API\Traits\Request\Financial\PaymentAttributes;
+use Genesis\API\Traits\Request\Financial\PendingPaymentAttributes;
 use Genesis\API\Validators\Request\RegexValidator;
+use Genesis\Exceptions\InvalidArgument;
+use Genesis\Utils\Common as CommonUtils;
 
 /**
  * Class GiroPay
@@ -36,7 +39,8 @@ use Genesis\API\Validators\Request\RegexValidator;
  */
 class GiroPay extends Financial
 {
-    use AsyncAttributes, PaymentAttributes, AddressInfoAttributes, BankAttributes;
+    use AsyncAttributes, PaymentAttributes, AddressInfoAttributes, BankAttributes,
+        PendingPaymentAttributes;
 
     /**
      * Returns the Request transaction type
@@ -60,19 +64,38 @@ class GiroPay extends Financial
             'currency',
             'return_success_url',
             'return_failure_url',
-            'bic',
             'billing_country'
         ];
 
-        $this->requiredFields = \Genesis\Utils\Common::createArrayObject($requiredFields);
+        $this->requiredFields = CommonUtils::createArrayObject($requiredFields);
 
         $requiredFieldValues = [
             'billing_country' => ['DE'],
-            'currency'        => ['EUR'],
-            'iban'            => new RegexValidator(RegexValidator::PATTERN_DE_IBAN)
+            'currency'        => ['EUR']
         ];
 
-        $this->requiredFieldValues = \Genesis\Utils\Common::createArrayObject($requiredFieldValues);
+        $this->requiredFieldValues = CommonUtils::createArrayObject($requiredFieldValues);
+    }
+
+    /**
+     * Add iban conditional validation if it is present
+     *
+     * @return void
+     *
+     * @throws InvalidArgument
+     * @throws \Genesis\Exceptions\ErrorParameter
+     * @throws \Genesis\Exceptions\InvalidClassMethod
+     */
+    protected function checkRequirements()
+    {
+        $this->requiredFieldValuesConditional = CommonUtils::createArrayObject(
+            array_merge(
+                (array)$this->requiredFieldValuesConditional,
+                $this->getIbanConditions()
+            )
+        );
+
+        parent::checkRequirements();
     }
 
     /**
@@ -86,6 +109,7 @@ class GiroPay extends Financial
             'remote_ip'          => $this->remote_ip,
             'return_success_url' => $this->return_success_url,
             'return_failure_url' => $this->return_failure_url,
+            'return_pending_url' => $this->getReturnPendingUrl(),
             'amount'             => $this->transformAmount($this->amount, $this->currency),
             'currency'           => $this->currency,
             'customer_email'     => $this->customer_email,

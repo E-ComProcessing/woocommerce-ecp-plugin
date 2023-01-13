@@ -24,14 +24,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * ecomprocessing Helper Class
  *
- * @class WC_EComprocessing_Transactions_Tree
+ * @class WC_ecomprocessing_Transactions_Tree
  *
  * @SuppressWarnings(PHPMD)
  */
-class WC_EComprocessing_Transactions_Tree {
+class WC_ecomprocessing_Transactions_Tree {
 
-	const META_DATA_KEY_HIERARCHY = 'emp_trx_hierarchy';
-	const META_DATA_KEY_LIST      = 'emp_trx_list';
+	const META_DATA_KEY_HIERARCHY = 'ecp_trx_hierarchy';
+	const META_DATA_KEY_LIST      = 'ecp_trx_list';
 
 	/**
 	 * @var array $trx_hierarchy child_unique_id => parent_unique_id
@@ -42,10 +42,10 @@ class WC_EComprocessing_Transactions_Tree {
 	/**
 	 * @param WC_Order $order
 	 *
-	 * @return WC_EComprocessing_Transactions_Tree
+	 * @return WC_ecomprocessing_Transactions_Tree
 	 */
 	public static function createFromOrder( WC_Order $order ) {
-		return new WC_EComprocessing_Transactions_Tree(
+		return new WC_ecomprocessing_Transactions_Tree(
 			array_map(
 				function ( $v ) {
 					return (object) $v;
@@ -56,7 +56,7 @@ class WC_EComprocessing_Transactions_Tree {
 	}
 
 	/**
-	 * WC_EComprocessing_Transactions_Tree constructor.
+	 * WC_ecomprocessing_Transactions_Tree constructor.
 	 *
 	 * @param array $trx_list_existing
 	 * @param array $trx_list_new
@@ -76,8 +76,8 @@ class WC_EComprocessing_Transactions_Tree {
 	 */
 	public static function getTransactionsListFromOrder( WC_Order $order ) {
 		return static::get_transaction_tree(
-			WC_EComprocessing_Order_Helper::getOrderMetaData(
-				WC_EComprocessing_Order_Helper::getOrderProp( $order, 'id' ),
+			WC_ecomprocessing_Order_Helper::getOrderMetaData(
+				WC_ecomprocessing_Order_Helper::getOrderProp( $order, 'id' ),
 				static::META_DATA_KEY_LIST
 			)
 		);
@@ -114,7 +114,7 @@ class WC_EComprocessing_Transactions_Tree {
 		// Add reference_id to checkout trx so hierarchy will work out and
 		// change checkout status the same way like refunds and voids
 		if ( count( $trx_list_existing ) === 1 && array_key_exists( 0, $trx_list_existing ) &&
-			$trx_list_existing[0]->type === WC_EComprocessing_Transaction::TYPE_CHECKOUT ) {
+			$trx_list_existing[0]->type === WC_ecomprocessing_Transaction::TYPE_CHECKOUT ) {
 			foreach ( $trx_list_new as $trx_new ) {
 				if ( $trx_new->unique_id !== $trx_list_existing[0]->unique_id ) {
 					$this->trx_hierarchy[ $trx_new->unique_id ] = $trx_list_existing[0]->unique_id;
@@ -148,12 +148,12 @@ class WC_EComprocessing_Transactions_Tree {
 	}
 
 	/**
-	 * Change genesis response objects to internal WC_EComprocessing_Transaction
+	 * Change genesis response objects to internal WC_ecomprocessing_Transaction
 	 */
 	protected function parseTrxs() {
 		foreach ( $this->trx_list as &$raw_trx ) {
 			if ( $raw_trx instanceof stdClass ) {
-				$raw_trx = new WC_EComprocessing_Transaction(
+				$raw_trx = new WC_ecomprocessing_Transaction(
 					$raw_trx,
 					$this->findParentId( $raw_trx )
 				);
@@ -162,7 +162,7 @@ class WC_EComprocessing_Transactions_Tree {
 	}
 
 	/**
-	 * @param stdClass|WC_EComprocessing_Transaction $trx
+	 * @param stdClass|WC_ecomprocessing_Transaction $trx
 	 *
 	 * @return bool|string
 	 */
@@ -192,7 +192,7 @@ class WC_EComprocessing_Transactions_Tree {
 	 * every branch is a transaction related to
 	 * the order
 	 *
-	 * @param $transactions array WC_EComprocessing_Transaction
+	 * @param $transactions array WC_ecomprocessing_Transaction
 	 * @param $selected_transaction_types array
 	 *
 	 * @return array
@@ -304,6 +304,8 @@ class WC_EComprocessing_Transactions_Tree {
 				\Genesis\API\Constants\Transaction\Types::AUTHORIZE_3D,
 				\Genesis\API\Constants\Transaction\Types::KLARNA_AUTHORIZE,
 				\Genesis\API\Constants\Transaction\Types::GOOGLE_PAY,
+				\Genesis\API\Constants\Transaction\Types::PAY_PAL,
+				\Genesis\API\Constants\Transaction\Types::APPLE_PAY,
 			),
 			\Genesis\API\Constants\Transaction\States::APPROVED
 		);
@@ -374,7 +376,9 @@ class WC_EComprocessing_Transactions_Tree {
 	 */
 	private static function is_transaction_has_custom_attr( $transaction_type ) {
 		$transaction_types = array(
-			\Genesis\API\Constants\Transaction\Types::GOOGLE_PAY
+			\Genesis\API\Constants\Transaction\Types::GOOGLE_PAY,
+			\Genesis\API\Constants\Transaction\Types::PAY_PAL,
+			\Genesis\API\Constants\Transaction\Types::APPLE_PAY,
 		);
 
 		return in_array( $transaction_type, $transaction_types, true );
@@ -392,21 +396,62 @@ class WC_EComprocessing_Transactions_Tree {
 	private static function check_transaction_by_selected_attribute( $action, $transaction_type, $selected_types ) {
 		switch ( $transaction_type ) {
 			case \Genesis\API\Constants\Transaction\Types::GOOGLE_PAY:
-				if ( WC_EComprocessing_Method::METHOD_ACTION_CAPTURE === $action ) {
+				if ( WC_ecomprocessing_Method::METHOD_ACTION_CAPTURE === $action ) {
 					return in_array(
-						WC_EComprocessing_Method::GOOGLE_PAY_TRANSACTION_PREFIX . WC_EComprocessing_Method::GOOGLE_PAY_PAYMENT_TYPE_AUTHORIZE,
+						WC_ecomprocessing_Method::GOOGLE_PAY_TRANSACTION_PREFIX . WC_ecomprocessing_Method::GOOGLE_PAY_PAYMENT_TYPE_AUTHORIZE,
 						$selected_types,
 						true
 					);
 				}
 
-				if ( WC_EComprocessing_Method::METHOD_ACTION_REFUND === $action ) {
+				if ( WC_ecomprocessing_Method::METHOD_ACTION_REFUND === $action ) {
 					return in_array(
-						WC_EComprocessing_Method::GOOGLE_PAY_TRANSACTION_PREFIX . WC_EComprocessing_Method::GOOGLE_PAY_PAYMENT_TYPE_SALE,
+						WC_ecomprocessing_Method::GOOGLE_PAY_TRANSACTION_PREFIX . WC_ecomprocessing_Method::GOOGLE_PAY_PAYMENT_TYPE_SALE,
 						$selected_types,
 						true
 					);
 				}
+				break;
+			case \Genesis\API\Constants\Transaction\Types::PAY_PAL:
+				if ( WC_ecomprocessing_Method::METHOD_ACTION_CAPTURE === $action ) {
+					return in_array(
+						WC_ecomprocessing_Method::PAYPAL_TRANSACTION_PREFIX .
+						WC_ecomprocessing_Method::PAYPAL_PAYMENT_TYPE_AUTHORIZE,
+						$selected_types,
+						true
+					);
+				}
+
+				if ( WC_ecomprocessing_Method::METHOD_ACTION_REFUND === $action ) {
+					$refundable_types = [
+						WC_ecomprocessing_Method::PAYPAL_TRANSACTION_PREFIX .
+						WC_ecomprocessing_Method::PAYPAL_PAYMENT_TYPE_SALE,
+						WC_ecomprocessing_Method::PAYPAL_TRANSACTION_PREFIX .
+						WC_ecomprocessing_Method::PAYPAL_PAYMENT_TYPE_EXPRESS,
+					];
+
+					return ( count( array_intersect( $refundable_types, $selected_types ) ) > 0 );
+				}
+				break;
+			case \Genesis\API\Constants\Transaction\Types::APPLE_PAY:
+				if ( WC_ecomprocessing_Method::METHOD_ACTION_CAPTURE === $action ) {
+					return in_array(
+						WC_ecomprocessing_Method::APPLE_PAY_TRANSACTION_PREFIX .
+						WC_ecomprocessing_Method::APPLE_PAY_PAYMENT_TYPE_AUTHORIZE,
+						$selected_types,
+						true
+					);
+				}
+
+				if ( WC_ecomprocessing_Method::METHOD_ACTION_REFUND === $action ) {
+					return in_array(
+						WC_ecomprocessing_Method::APPLE_PAY_TRANSACTION_PREFIX .
+						WC_ecomprocessing_Method::APPLE_PAY_PAYMENT_TYPE_SALE,
+						$selected_types,
+						true
+					);
+				}
+				break;
 			default:
 				return false;
 		}
@@ -431,7 +476,7 @@ class WC_EComprocessing_Transactions_Tree {
 
 		if ( self::is_transaction_has_custom_attr( $transaction['type'] ) && count( $selected_transaction_types ) > 0 ) {
 			return self::check_transaction_by_selected_attribute(
-				WC_EComprocessing_Method::METHOD_ACTION_CAPTURE,
+				WC_ecomprocessing_Method::METHOD_ACTION_CAPTURE,
 				$transaction['type'],
 				$selected_transaction_types
 			);
@@ -459,7 +504,7 @@ class WC_EComprocessing_Transactions_Tree {
 
 		if ( self::is_transaction_has_custom_attr( $transaction['type'] ) && count( $selected_transaction_types ) > 0 ) {
 			return self::check_transaction_by_selected_attribute(
-				WC_EComprocessing_Method::METHOD_ACTION_REFUND,
+				WC_ecomprocessing_Method::METHOD_ACTION_REFUND,
 				$transaction['type'],
 				$selected_transaction_types
 			);
@@ -507,7 +552,7 @@ class WC_EComprocessing_Transactions_Tree {
 	}
 
 	/**
-	 * @return WC_EComprocessing_Transaction
+	 * @return WC_ecomprocessing_Transaction
 	 */
 	public function getAuthorizeTrx() {
 		foreach ( $this->trx_list as $trx ) {
@@ -518,7 +563,7 @@ class WC_EComprocessing_Transactions_Tree {
 	}
 
 	/**
-	 * @return WC_EComprocessing_Transaction
+	 * @return WC_ecomprocessing_Transaction
 	 */
 	public function getSettlementTrx() {
 		foreach ( $this->trx_list as $trx ) {

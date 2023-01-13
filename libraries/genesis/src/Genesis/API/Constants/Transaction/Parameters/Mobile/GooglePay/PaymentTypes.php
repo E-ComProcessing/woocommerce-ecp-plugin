@@ -28,19 +28,19 @@ use Genesis\Utils\Common as CommonUtils;
 class PaymentTypes
 {
     /**
-     * Google Pay authorize transaction type
+     * Google Pay authorize payment subtype
      */
-    const AUTHORIZE = 'authorize';
+    const AUTHORIZE           = 'authorize';
 
     /**
-     * Google Pay recurring transaction type
+     * Google Pay init_recurring_sale payment subtype
      */
-    const RECURRING = 'recurring';
+    const INIT_RECURRING_SALE = 'init_recurring_sale';
 
     /**
-     * Google Pay sale transaction type
+     * Google Pay sale payment subtype
      */
-    const SALE = 'sale';
+    const SALE                = 'sale';
 
     /**
      * Get Google Pay allowed payment types

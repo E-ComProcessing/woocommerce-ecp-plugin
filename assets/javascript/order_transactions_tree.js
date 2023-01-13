@@ -78,7 +78,7 @@ jQuery( document ).ready(
 		modalObj.on(
 			'shown.bs.modal',
 			function() {
-				doRemoveEComprocessingNotices();
+				doRemoveEcomprocessingNotices();
 
 				/* enable the submit button just in case (if the bootstrapValidator is enabled it will disable the button if necessary */
 				jQuery( '#ecomprocessing-modal-submit' ).removeAttr( 'disabled' );
@@ -118,13 +118,13 @@ function transactionAction() {
 
 	switch (submitBtn.data( 'trx_type' )) {
 		case 'capture':
-			action = doCaptureEComprocessingOrderPaymentAmount;
+			action = doCaptureEcomprocessingOrderPaymentAmount;
 			break;
 		case 'void':
-			action = doVoidEComprocessingOrderPayment;
+			action = doVoidEcomprocessingOrderPayment;
 			break;
 		case 'refund':
-			action = doRefundEComprocessingOrderPaymentAmount;
+			action = doRefundEcomprocessingOrderPaymentAmount;
 			break;
 	}
 
@@ -135,12 +135,12 @@ function transactionAction() {
 	);
 }
 
-function doVoidEComprocessingOrderPayment(paymentType, paymentTitle, transactionId) {
+function doVoidEcomprocessingOrderPayment(paymentType, paymentTitle, transactionId) {
 	if ( ! window.confirm( 'Are you sure you wish to do online void through ' + paymentTitle + ' Payment Gateway?' ) ) {
 		return false;
 	}
 
-	showHideEComprocessingAjaxLoader( true );
+	showHideEcomprocessingAjaxLoader( true );
 
 	var void_text = jQuery( '#ecomprocessing_transaction_usage' ).val();
 
@@ -156,11 +156,11 @@ function doVoidEComprocessingOrderPayment(paymentType, paymentTitle, transaction
 		woocommerce_admin_meta_boxes.ajax_url,
 		data,
 		function (response) {
-			doRemoveEComprocessingNotices();
+			doRemoveEcomprocessingNotices();
 
 			if (response.success === true) {
 				if (response.data.gateway.message) {
-					var $successNotice = doCreateEComprocessingNotice(
+					var $successNotice = doCreateEcomprocessingNotice(
 						response.data.gateway.message,
 						'success',
 						'#ecomprocessing-modal .modal-body',
@@ -172,7 +172,7 @@ function doVoidEComprocessingOrderPayment(paymentType, paymentTitle, transaction
 					}
 				}
 			} else {
-				var $errorNotice = doCreateEComprocessingNotice(
+				var $errorNotice = doCreateEcomprocessingNotice(
 					response.data.error,
 					'error',
 					'#ecomprocessing-modal .modal-body',
@@ -183,17 +183,17 @@ function doVoidEComprocessingOrderPayment(paymentType, paymentTitle, transaction
 					$errorNotice.slideDown( 'slow' );
 				}
 			}
-			showHideEComprocessingAjaxLoader( false );
+			showHideEcomprocessingAjaxLoader( false );
 		}
 	);
 }
 
-function doCaptureEComprocessingOrderPaymentAmount(paymentType, paymentTitle, transactionId) {
+function doCaptureEcomprocessingOrderPaymentAmount(paymentType, paymentTitle, transactionId) {
 	if ( ! window.confirm( 'Are you sure you wish to do online capture through ' + paymentTitle + ' Payment Gateway?' ) ) {
 		return false;
 	}
 
-	showHideEComprocessingAjaxLoader( true );
+	showHideEcomprocessingAjaxLoader( true );
 
 	var capture_amount = jQuery( '#ecomprocessing_transaction_amount' ).val();
 	var capture_text   = jQuery( '#ecomprocessing_transaction_usage' ).val();
@@ -211,11 +211,11 @@ function doCaptureEComprocessingOrderPaymentAmount(paymentType, paymentTitle, tr
 		woocommerce_admin_meta_boxes.ajax_url,
 		data,
 		function (response) {
-			doRemoveEComprocessingNotices();
+			doRemoveEcomprocessingNotices();
 
 			if (response.success === true) {
 				if (response.data.gateway.message) {
-					var $successNotice = doCreateEComprocessingNotice(
+					var $successNotice = doCreateEcomprocessingNotice(
 						response.data.gateway.message,
 						'success',
 						'#ecomprocessing-modal .modal-body',
@@ -227,7 +227,7 @@ function doCaptureEComprocessingOrderPaymentAmount(paymentType, paymentTitle, tr
 					}
 				}
 			} else {
-				var $errorNotice = doCreateEComprocessingNotice(
+				var $errorNotice = doCreateEcomprocessingNotice(
 					response.data.error,
 					'error',
 					'#ecomprocessing-modal .modal-body',
@@ -238,17 +238,17 @@ function doCaptureEComprocessingOrderPaymentAmount(paymentType, paymentTitle, tr
 					$errorNotice.slideDown( 'slow' );
 				}
 			}
-			showHideEComprocessingAjaxLoader( false );
+			showHideEcomprocessingAjaxLoader( false );
 		}
 	);
 }
 
-function doRefundEComprocessingOrderPaymentAmount(paymentType, paymentTitle, transactionId) {
+function doRefundEcomprocessingOrderPaymentAmount(paymentType, paymentTitle, transactionId) {
 	if ( ! window.confirm( 'Are you sure you wish to do online refund through ' + paymentTitle + ' Payment Gateway?' ) ) {
 		return false;
 	}
 
-	showHideEComprocessingAjaxLoader( true );
+	showHideEcomprocessingAjaxLoader( true );
 
 	var amount = jQuery( '#ecomprocessing_transaction_amount' ).val();
 	var reason = jQuery( '#ecomprocessing_transaction_usage' ).val();
@@ -266,11 +266,11 @@ function doRefundEComprocessingOrderPaymentAmount(paymentType, paymentTitle, tra
 		woocommerce_admin_meta_boxes.ajax_url,
 		data,
 		function (response) {
-			doRemoveEComprocessingNotices();
+			doRemoveEcomprocessingNotices();
 
 			if (response.success === true) {
 				if (response.data.gateway.message) {
-					var $successNotice = doCreateEComprocessingNotice(
+					var $successNotice = doCreateEcomprocessingNotice(
 						response.data.gateway.message,
 						'success',
 						'#ecomprocessing-modal .modal-body',
@@ -282,7 +282,7 @@ function doRefundEComprocessingOrderPaymentAmount(paymentType, paymentTitle, tra
 					}
 				}
 			} else {
-				var $errorNotice = doCreateEComprocessingNotice(
+				var $errorNotice = doCreateEcomprocessingNotice(
 					response.data.error,
 					'error',
 					'#ecomprocessing-modal .modal-body',
@@ -293,7 +293,7 @@ function doRefundEComprocessingOrderPaymentAmount(paymentType, paymentTitle, tra
 					$errorNotice.slideDown( 'slow' );
 				}
 			}
-			showHideEComprocessingAjaxLoader( false );
+			showHideEcomprocessingAjaxLoader( false );
 		}
 	);
 }
@@ -310,7 +310,7 @@ function successfulRequest($successNotice) {
 	);
 }
 
-function doCreateEComprocessingNotice(message, type, containerSelector, prepend) {
+function doCreateEcomprocessingNotice(message, type, containerSelector, prepend) {
 	var noticeClasses = {
 		'success' : 'updated notice',
 		'error'   : 'error notice'
@@ -335,7 +335,7 @@ function doCreateEComprocessingNotice(message, type, containerSelector, prepend)
 	}
 }
 
-function doRemoveEComprocessingNotices() {
+function doRemoveEcomprocessingNotices() {
 	jQuery( '#ecomprocessing-modal .modal-body .notice.error' ).remove();
 }
 
@@ -487,7 +487,7 @@ function transactionModal(type, id_unique, amount) {
 	transactionAmountInput.val( amount );
 
 	$modalInputs.show();
-	showHideEComprocessingAjaxLoader( false );
+	showHideEcomprocessingAjaxLoader( false );
 	modalObj.modal( {backdrop:'static'} );
 }
 
@@ -517,7 +517,7 @@ function updateTransModalControlState(controls, visibilityStatus) {
 	);
 }
 
-function showHideEComprocessingAjaxLoader(shouldShow) {
+function showHideEcomprocessingAjaxLoader(shouldShow) {
 	if (shouldShow === true) {
 		$senderButton.fadeOut();
 		$closeButton.fadeOut();

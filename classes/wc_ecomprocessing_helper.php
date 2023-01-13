@@ -24,9 +24,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * ecomprocessing Helper Class
  *
- * @class   WC_EComprocessing_Helper
+ * @class   WC_ecomprocessing_Helper
  */
-class WC_EComprocessing_Helper {
+class WC_ecomprocessing_Helper {
 
 	const LOG_NAME              = 'ecomprocessing';
 	const WP_NOTICE_TYPE_ERROR  = 'error';

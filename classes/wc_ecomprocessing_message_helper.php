@@ -24,9 +24,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * ecomprocessing Message Helper Class
  *
- * @class   WC_EComprocessing_Message_Helper
+ * @class   WC_ecomprocessing_Message_Helper
  */
-class WC_EComprocessing_Message_Helper {
+class WC_ecomprocessing_Message_Helper {
 
 	const NOTICE_TYPE_SUCCESS = 'success';
 	const NOTICE_TYPE_ERROR   = 'error';

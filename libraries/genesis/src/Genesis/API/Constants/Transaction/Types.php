@@ -232,6 +232,8 @@ class Types
      * PayPal Express Checkout is a fast, easy way for buyers to pay with PayPal.
      * Express Checkout eliminates one of the major causes of checkout abandonment by giving buyers
      * all the transaction details at once, including order details, shipping options, insurance choices, and tax totals
+     *
+     * @deprecated 1.19.2 Payment method is deprecated and will be removed
      */
     const PAYPAL_EXPRESS = 'paypal_express';
 
@@ -710,6 +712,49 @@ class Types
     const GOOGLE_PAY = 'google_pay';
 
     /**
+     * PayPal transaction is a fast and easy way for buyers to pay with their PayPal account.
+     * It gives buyers all the transaction details at once, including order details, shipping options,
+     * insurance choices, and tax totals.
+     */
+    const PAY_PAL = 'pay_pal';
+
+    /**
+     * African Mobile Sale, otherwise known as Charge, is an APM used to process Mobile network operator payments.
+     * It is an async payment method and will be approved once the payment is processed with the Mobile network
+     * operator
+     */
+    const AFRICAN_MOBILE_SALE = 'african_mobile_sale';
+
+    /**
+     * African Mobile Payout, or otherwise known as Disbursement, is an APM used to process Mobile network operator
+     * payments. It is an async payment method and will be approved once the payment is processed with the Mobile
+     * network operator
+     */
+    const AFRICAN_MOBILE_PAYOUT = 'african_mobile_payout';
+
+    /**
+     * Russian Mobile Sale, otherwise known as Charge, is an APM used to process Mobile network operator payments.
+     * It is an async payment method and will be approved once the payment is processed by the Mobile network operator.
+     * Notice: Russian Mobile Sale does not support refund and void.
+     */
+    const RUSSIAN_MOBILE_SALE = 'russian_mobile_sale';
+
+    /**
+     * Russian Mobile Payout, or otherwise known as Disbursement, is an APM used to process Mobile network operator
+     * payments. It is an async payment method and will be approved once the payment is processed by the
+     * Mobile network operator. Notice: Russian Mobile Payout does not support refund and void.
+     */
+    const RUSSIAN_MOBILE_PAYOUT = 'russian_mobile_payout';
+
+    /**
+     * Pix is a payment service created by the Central Bank of Brazil (BACEN),
+     * which represents a new way of receiving/sending money. Pix allows payments
+     * to be made instantly. The customer can pay bills, invoices, public utilities,
+     * transfer and receive credits in a facilitated manner, using only Pix keys (CPF/CNPJ).
+     */
+    const PIX = 'pix';
+
+    /**
      * Retrieve all available transaction Types
      *
      * @return array
@@ -773,6 +818,7 @@ class Types
             self::EMPRESE_DE_ENERGIA      => 'CashPayments\EmpreseDeEnergia',
             self::OXXO                    => 'CashPayments\Oxxo',
             self::PAGO_FACIL              => 'CashPayments\PagoFacil',
+            self::PIX                     => 'CashPayments\Pix',
             self::REDPAGOS                => 'CashPayments\Redpagos',
             self::SANTANDER_CASH          => 'CashPayments\SantanderCash',
             self::SURTIMAX                => 'CashPayments\Surtimax',
@@ -784,6 +830,8 @@ class Types
             self::INTERSOLVE              => 'GiftCards\Intersolve',
             self::APPLE_PAY               => 'Mobile\ApplePay',
             self::GOOGLE_PAY              => 'Mobile\GooglePay',
+            self::RUSSIAN_MOBILE_SALE     => 'Mobile\RussianMobileSale',
+            self::AFRICAN_MOBILE_SALE     => 'Mobile\AfricanMobileSale.php',
             self::ALIPAY                  => 'OnlineBankingPayments\Alipay',
             self::ASTROPAY_DIRECT         => 'OnlineBankingPayments\AstropayDirect',
             self::BANCO_DO_BRASIL         => 'OnlineBankingPayments\BancoDoBrasil',
@@ -818,6 +866,8 @@ class Types
             self::WECHAT                  => 'OnlineBankingPayments\WeChat',
             self::PAYBYVOUCHER_YEEPAY     => 'PayByVouchers\oBeP',
             self::PAYBYVOUCHER_SALE       => 'PayByVouchers\Sale',
+            self::AFRICAN_MOBILE_PAYOUT   => 'Payout\AfricanMobilePayout',
+            self::RUSSIAN_MOBILE_PAYOUT   => 'Payout\RussianMobilePayout',
             self::INCREMENTAL_AUTHORIZE   => 'Preauthorization\IncrementalAuthorize',
             self::PARTIAL_REVERSAL        => 'Preauthorization\PartialReversal',
             self::SCT_PAYOUT              => 'SCT\Payout',
@@ -832,6 +882,7 @@ class Types
             self::EZEEWALLET              => 'Wallets\eZeeWallet',
             self::NETELLER                => 'Wallets\Neteller',
             self::QIWI                    => 'Wallets\Qiwi',
+            self::PAY_PAL                 => 'Wallets\PayPal',
             self::WEBMONEY                => 'Wallets\WebMoney',
             self::ZIMPLER                 => 'Wallets\Zimpler',
         ];
@@ -863,6 +914,7 @@ class Types
         return [
             self::ACCOUNT_VERIFICATION,
             self::ARGENCARD,
+            self::APPLE_PAY,
             self::AURA,
             self::AUTHORIZE,
             self::AUTHORIZE_3D,
@@ -904,15 +956,17 @@ class Types
             self::OXXO,
             self::P24,
             self::PAGO_FACIL,
-            self::PAYPAL_EXPRESS,
+            self::PAY_PAL,
             self::PAYSAFECARD,
             self::PAYU,
+            self::PIX,
             self::POLI,
             self::POST_FINANCE,
             self::PPRO,
             self::PSE,
             self::RAPI_PAGO,
             self::REDPAGOS,
+            self::RUSSIAN_MOBILE_SALE,
             self::SAFETYPAY,
             self::SALE,
             self::SALE_3D,
@@ -1000,7 +1054,8 @@ class Types
             self::AUTHORIZE_3D,
             self::KLARNA_AUTHORIZE,
             self::APPLE_PAY,
-            self::GOOGLE_PAY
+            self::GOOGLE_PAY,
+            self::PAY_PAL
         ];
 
         return in_array(strtolower($type), $transactionTypesList);
@@ -1015,6 +1070,8 @@ class Types
     {
         $transactionTypesList = [
             self::APPLE_PAY,
+            self::AFRICAN_MOBILE_PAYOUT,
+            self::AFRICAN_MOBILE_SALE,
             self::BALOTO,
             self::BANCOMER,
             self::BANCONTACT,
@@ -1043,8 +1100,9 @@ class Types
             self::P24,
             self::PAGO_FACIL,
             self::PARTIAL_REVERSAL,
-            self::PAYPAL_EXPRESS,
+            self::PAY_PAL,
             self::PAYU,
+            self::PIX,
             self::PPRO,
             self::PSE,
             self::POST_FINANCE,
@@ -1078,6 +1136,8 @@ class Types
     public static function canVoid($type)
     {
         $transactionTypesList = [
+            self::AFRICAN_MOBILE_PAYOUT,
+            self::AFRICAN_MOBILE_SALE,
             self::AUTHORIZE,
             self::AUTHORIZE_3D,
             self::TRUSTLY_SALE,
@@ -1090,6 +1150,7 @@ class Types
             self::SALE,
             self::SALE_3D,
             self::GOOGLE_PAY,
+            self::PAY_PAL
         ];
 
         return in_array(strtolower($type), $transactionTypesList);
@@ -1236,6 +1297,7 @@ class Types
             self::INPAY,
             self::PAYBYVOUCHER_SALE,
             self::PAYBYVOUCHER_YEEPAY,
+            self::PAYPAL_EXPRESS,
             self::QIWI,
             self::SANTANDER_CASH,
             self::SURTIMAX,

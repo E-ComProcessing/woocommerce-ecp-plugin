@@ -17,7 +17,6 @@
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
 
-use Genesis\API\Constants\Transaction\Parameters\Mobile\GooglePay\PaymentTypes as GooglePaymentTypes;
 use Genesis\API\Constants\Transaction\Types;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -27,12 +26,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * ecomprocessing Base Method
  *
- * @class   WC_EComprocessing_Method
+ * @class   WC_ecomprocessing_Method
  * @extends WC_Payment_Gateway
  *
  * @SuppressWarnings(PHPMD)
  */
-abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
+abstract class WC_ecomprocessing_Method extends WC_Payment_Gateway {
 
 	/**
 	 * Order Meta Constants
@@ -97,6 +96,14 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 	const SETTING_KEY_BUSINESS_ATOL_CERTIFICATE           = 'business_atol_certificate';
 	const SETTING_KEY_BUSINESS_PICK_UP_DATE               = 'business_pick_up_date';
 	const SETTING_KEY_BUSINESS_RETURN_DATE                = 'business_return_date';
+	const SETTING_KEY_REDIRECT_FAILURE                    = 'redirect_failure';
+	const SETTING_KEY_REDIRECT_CANCEL                     = 'redirect_cancel';
+
+	/**
+	 * Order cancel/failure settings
+	 */
+	const SETTING_VALUE_ORDER     = 'order';
+	const SETTING_VALUE_CHECKOUT  = 'checkout';
 
 	/**
 	 * A List with the Available WC Order Statuses
@@ -139,13 +146,13 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 	const PLATFORM_TRANSACTION_PREFIX = 'wc-';
 
 	protected static $helpers = array(
-		'WC_EComprocessing_Helper'              => 'wc_ecomprocessing_helper',
-		'WC_EComprocessing_Genesis_Helper'      => 'wc_ecomprocessing_genesis_helper',
-		'WC_EComprocessing_Order_Helper'        => 'wc_ecomprocessing_order_helper',
-		'WC_EComprocessing_Subscription_Helper' => 'wc_ecomprocessing_subscription_helper',
-		'WC_EComprocessing_Message_Helper'      => 'wc_ecomprocessing_message_helper',
-		'WC_EComprocessing_Transaction'         => 'wc_ecomprocessing_transaction',
-		'WC_EComprocessing_Transaction_Tree'    => 'wc_ecomprocessing_transactions_tree',
+		'WC_ecomprocessing_Helper'              => 'wc_ecomprocessing_helper',
+		'WC_ecomprocessing_Genesis_Helper'      => 'wc_ecomprocessing_genesis_helper',
+		'WC_ecomprocessing_Order_Helper'        => 'wc_ecomprocessing_order_helper',
+		'WC_ecomprocessing_Subscription_Helper' => 'wc_ecomprocessing_subscription_helper',
+		'WC_ecomprocessing_Message_Helper'      => 'wc_ecomprocessing_message_helper',
+		'WC_ecomprocessing_Transaction'         => 'wc_ecomprocessing_transaction',
+		'WC_ecomprocessing_Transaction_Tree'    => 'wc_ecomprocessing_transactions_tree',
 	);
 
 	const PPRO_TRANSACTION_SUFFIX = '_ppro';
@@ -153,9 +160,24 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 	/**
 	 * Google Pay transaction prefix and payment methods constants
 	 */
-	const GOOGLE_PAY_TRANSACTION_PREFIX     = Types::GOOGLE_PAY . '_';
-	const GOOGLE_PAY_PAYMENT_TYPE_AUTHORIZE = GooglePaymentTypes::AUTHORIZE;
-	const GOOGLE_PAY_PAYMENT_TYPE_SALE      = GooglePaymentTypes::SALE;
+	const GOOGLE_PAY_TRANSACTION_PREFIX     = 'google_pay_';
+	const GOOGLE_PAY_PAYMENT_TYPE_AUTHORIZE = 'authorize';
+	const GOOGLE_PAY_PAYMENT_TYPE_SALE      = 'sale';
+
+	/**
+	 * PayPal transaction prefix and payment methods constants
+	 */
+	const PAYPAL_TRANSACTION_PREFIX     = 'pay_pal_';
+	const PAYPAL_PAYMENT_TYPE_AUTHORIZE = 'authorize';
+	const PAYPAL_PAYMENT_TYPE_SALE      = 'sale';
+	const PAYPAL_PAYMENT_TYPE_EXPRESS   = 'express';
+
+	/**
+	 * Apple Pay transaction prefix and payment methods constants
+	 */
+	const APPLE_PAY_TRANSACTION_PREFIX     = 'apple_pay_';
+	const APPLE_PAY_PAYMENT_TYPE_AUTHORIZE = 'authorize';
+	const APPLE_PAY_PAYMENT_TYPE_SALE      = 'sale';
 
 	const METHOD_ACTION_CAPTURE = 'capture';
 	const METHOD_ACTION_REFUND  = 'refund';
@@ -358,7 +380,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 		if ( ! $this->getIsSettingsCheckoutPage() ) {
 			return false;
 		}
-		return isset( $_GET['section'] ) && WC_EComprocessing_Helper::getStringEndsWith( $_GET['section'], $this->id );
+		return isset( $_GET['section'] ) && WC_ecomprocessing_Helper::getStringEndsWith( $_GET['section'], $this->id );
 	}
 
 	/**
@@ -442,15 +464,15 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 	 * @param int $order_id
 	 */
 	public function displayTransactionsListForOrder( $order_id ) {
-		$order = WC_EComprocessing_Order_Helper::getOrderById( $order_id );
+		$order = WC_ecomprocessing_Order_Helper::getOrderById( $order_id );
 
-		if ( WC_EComprocessing_Order_Helper::getOrderProp( $order, 'payment_method' ) !== $this->id ) {
+		if ( WC_ecomprocessing_Order_Helper::getOrderProp( $order, 'payment_method' ) !== $this->id ) {
 			return;
 		}
 
 		$this->should_execute_admin_footer_hook = true;
 
-		$transactions = WC_EComprocessing_Transactions_Tree::createFromOrder( $order );
+		$transactions = WC_ecomprocessing_Transactions_Tree::createFromOrder( $order );
 
 		if ( ! empty( $transactions ) ) {
 			$method_transaction_types   = $this->get_method_selected_transaction_types();
@@ -461,12 +483,12 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 				array(
 					'payment_method'        => $this,
 					'order'                 => $order,
-					'order_currency'        => WC_EComprocessing_Order_Helper::getOrderProp( $order, 'currency' ),
+					'order_currency'        => WC_ecomprocessing_Order_Helper::getOrderProp( $order, 'currency' ),
 					'transactions'          => array_map(
 						function ( $v ) {
 							return (array) $v;
 						},
-						WC_EComprocessing_Transactions_Tree::get_transaction_tree(
+						WC_ecomprocessing_Transactions_Tree::get_transaction_tree(
 							$transactions->trx_list,
 							$selected_transaction_types
 						)
@@ -498,19 +520,19 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 	protected function get_method_transaction_setting_key() {
 		$key = '';
 
-		if ( WC_EComprocessing_Checkout::get_method_code() === self::get_method_code() ) {
-			$key = WC_EComprocessing_Checkout::SETTING_KEY_TRANSACTION_TYPES;
+		if ( WC_ecomprocessing_Checkout::get_method_code() === self::get_method_code() ) {
+			$key = WC_ecomprocessing_Checkout::SETTING_KEY_TRANSACTION_TYPES;
 		}
 
-		if ( WC_EComprocessing_Direct::get_method_code() === self::get_method_code() ) {
-			$key = WC_EComprocessing_Direct::META_TRANSACTION_TYPE;
+		if ( WC_ecomprocessing_Direct::get_method_code() === self::get_method_code() ) {
+			$key = WC_ecomprocessing_Direct::META_TRANSACTION_TYPE;
 		}
 
 		return $key;
 	}
 
 	/**
-	 * @param WC_EComprocessing_Transaction $authorize
+	 * @param WC_ecomprocessing_Transaction $authorize
 	 *
 	 * @return bool
 	 */
@@ -519,7 +541,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * @param WC_EComprocessing_Transaction $capture
+	 * @param WC_ecomprocessing_Transaction $capture
 	 *
 	 * @return bool
 	 */
@@ -554,11 +576,11 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 			return false;
 		}
 
-		if ( WC_EComprocessing_Helper::isGetRequest() ) {
+		if ( WC_ecomprocessing_Helper::isGetRequest() ) {
 			if ( $this->enabled !== self::SETTING_VALUE_YES ) {
 				return false;
 			}
-		} elseif ( WC_EComprocessing_Helper::isPostRequest() ) {
+		} elseif ( WC_ecomprocessing_Helper::isPostRequest() ) {
 			if ( ! $this->getPostBoolSettingValue( self::SETTING_KEY_ENABLED ) ) {
 				return false;
 			}
@@ -573,26 +595,26 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 	 * Checks if SSL is enabled and if Genesis requirements are met.
 	 */
 	protected function admin_notices_genesis_requirements() {
-		if ( $this->is_ssl_required() && ! WC_EComprocessing_Helper::isStoreOverSecuredConnection() ) {
-			WC_EComprocessing_Helper::printWpNotice(
+		if ( $this->is_ssl_required() && ! WC_ecomprocessing_Helper::isStoreOverSecuredConnection() ) {
+			WC_ecomprocessing_Helper::printWpNotice(
 				static::getTranslatedText(
 					sprintf(
 						'%s payment method requires HTTPS connection in order to process payment data!',
 						$this->getModuleTitle()
 					)
 				),
-				WC_EComprocessing_Helper::WP_NOTICE_TYPE_ERROR
+				WC_ecomprocessing_Helper::WP_NOTICE_TYPE_ERROR
 			);
 		}
 
-		$genesisRequirementsVerified = WC_EComprocessing_Genesis_Helper::checkGenesisRequirementsVerified();
+		$genesisRequirementsVerified = WC_ecomprocessing_Genesis_Helper::checkGenesisRequirementsVerified();
 
 		if ( $genesisRequirementsVerified !== true ) {
-			WC_EComprocessing_Helper::printWpNotice(
+			WC_ecomprocessing_Helper::printWpNotice(
 				static::getTranslatedText(
 					$genesisRequirementsVerified->get_error_message()
 				),
-				WC_EComprocessing_Helper::WP_NOTICE_TYPE_ERROR
+				WC_ecomprocessing_Helper::WP_NOTICE_TYPE_ERROR
 			);
 		}
 	}
@@ -602,13 +624,13 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 	 */
 	protected function admin_notices_api_credentials() {
 		$areApiCredentialsDefined = true;
-		if ( WC_EComprocessing_Helper::isGetRequest() ) {
+		if ( WC_ecomprocessing_Helper::isGetRequest() ) {
 			foreach ( $this->getRequiredApiSettingKeys() as $requiredApiSetting ) {
 				if ( empty( $this->getMethodSetting( $requiredApiSetting ) ) ) {
 					$areApiCredentialsDefined = false;
 				}
 			}
-		} elseif ( WC_EComprocessing_Helper::isPostRequest() ) {
+		} elseif ( WC_ecomprocessing_Helper::isPostRequest() ) {
 			foreach ( $this->getRequiredApiSettingKeys() as $requiredApiSetting ) {
 				$apiSettingPostParamName = $this->getMethodAdminSettingPostParamName(
 					$requiredApiSetting
@@ -623,9 +645,9 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 		}
 
 		if ( ! $areApiCredentialsDefined ) {
-			WC_EComprocessing_Helper::printWpNotice(
+			WC_ecomprocessing_Helper::printWpNotice(
 				'You need to set the API credentials in order to use this payment method!',
-				WC_EComprocessing_Helper::WP_NOTICE_TYPE_ERROR
+				WC_ecomprocessing_Helper::WP_NOTICE_TYPE_ERROR
 			);
 		}
 	}
@@ -636,18 +658,18 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 	 */
 	protected function admin_notices_subscriptions() {
 		$isSubscriptionsAllowed =
-			WC_EComprocessing_Helper::isGetRequest() && $this->isSubscriptionEnabled() ||
-			WC_EComprocessing_Helper::isPostRequest() && $this->getPostBoolSettingValue( self::SETTING_KEY_ALLOW_SUBSCRIPTIONS );
+			WC_ecomprocessing_Helper::isGetRequest() && $this->isSubscriptionEnabled() ||
+			WC_ecomprocessing_Helper::isPostRequest() && $this->getPostBoolSettingValue( self::SETTING_KEY_ALLOW_SUBSCRIPTIONS );
 		if ( $isSubscriptionsAllowed ) {
-			if ( ! WC_EComprocessing_Subscription_Helper::isWCSubscriptionsInstalled() ) {
-				WC_EComprocessing_Helper::printWpNotice(
+			if ( ! WC_ecomprocessing_Subscription_Helper::isWCSubscriptionsInstalled() ) {
+				WC_ecomprocessing_Helper::printWpNotice(
 					static::getTranslatedText(
 						sprintf(
 							'<a href="%s">WooCommerce Subscription Plugin</a> is required for handling <strong>Subscriptions</strong>, which is disabled or not installed!',
-							WC_EComprocessing_Subscription_Helper::WC_SUBSCRIPTIONS_PLUGIN_URL
+							WC_ecomprocessing_Subscription_Helper::WC_SUBSCRIPTIONS_PLUGIN_URL
 						)
 					),
-					WC_EComprocessing_Helper::WP_NOTICE_TYPE_ERROR
+					WC_ecomprocessing_Helper::WP_NOTICE_TYPE_ERROR
 				);
 			}
 		}
@@ -740,7 +762,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 			)
 		);
 
-		if ( WC_EComprocessing_Subscription_Helper::isWCSubscriptionsInstalled() ) {
+		if ( WC_ecomprocessing_Subscription_Helper::isWCSubscriptionsInstalled() ) {
 			// Add handler for Recurring Sale Transactions
 			$this->addWPAction(
 				self::WC_ACTION_SCHEDULED_SUBSCRIPTION_PAYMENT,
@@ -874,7 +896,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 	 * @return array
 	 */
 	public function process_payment( $order_id ) {
-		if ( WC_EComprocessing_Subscription_Helper::hasOrderSubscriptions( $order_id ) ) {
+		if ( WC_ecomprocessing_Subscription_Helper::hasOrderSubscriptions( $order_id ) ) {
 			return $this->process_init_subscription_payment( $order_id );
 		}
 
@@ -888,7 +910,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 	 * @return bool
 	 */
 	protected function process_after_init_recurring_payment( $order, $gateway_response ) {
-		if ( WC_EComprocessing_Subscription_Helper::isInitRecurringOrderFinished( $order->get_id() ) ) {
+		if ( WC_ecomprocessing_Subscription_Helper::isInitRecurringOrderFinished( $order->get_id() ) ) {
 			return false;
 		}
 
@@ -896,16 +918,16 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 			return false;
 		}
 
-		$payment_transaction_response = WC_EComprocessing_Genesis_Helper::getReconcilePaymentTransaction( $gateway_response );
+		$payment_transaction_response = WC_ecomprocessing_Genesis_Helper::getReconcilePaymentTransaction( $gateway_response );
 
-		$paymentTxnStatus = WC_EComprocessing_Genesis_Helper::getGatewayStatusInstance( $payment_transaction_response );
+		$paymentTxnStatus = WC_ecomprocessing_Genesis_Helper::getGatewayStatusInstance( $payment_transaction_response );
 
 		if ( ! $paymentTxnStatus->isApproved() ) {
 			return false;
 		}
 
-		WC_EComprocessing_Subscription_Helper::saveInitRecurringResponseToOrderSubscriptions( $order->get_id(), $payment_transaction_response );
-		WC_EComprocessing_Subscription_Helper::setInitRecurringOrderFinished( $order->get_id() );
+		WC_ecomprocessing_Subscription_Helper::saveInitRecurringResponseToOrderSubscriptions( $order->get_id(), $payment_transaction_response );
+		WC_ecomprocessing_Subscription_Helper::setInitRecurringOrderFinished( $order->get_id() );
 
 		return true;
 	}
@@ -917,8 +939,8 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 	 * @return bool
 	 */
 	public static function canCapture( WC_Order $order, $unique_id ) {
-		return WC_EComprocessing_Transactions_Tree::canCapture(
-			WC_EComprocessing_Transactions_Tree::getTrxFromOrder( $order, $unique_id )
+		return WC_ecomprocessing_Transactions_Tree::canCapture(
+			WC_ecomprocessing_Transactions_Tree::getTrxFromOrder( $order, $unique_id )
 		);
 	}
 
@@ -929,9 +951,9 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 	 * @return bool
 	 */
 	public static function canVoid( WC_Order $order, $unique_id ) {
-		return WC_EComprocessing_Transactions_Tree::canVoid(
-			$trx_tree = WC_EComprocessing_Transactions_Tree::getTransactionsListFromOrder( $order ),
-			WC_EComprocessing_Transactions_Tree::getTrxFromOrder( $order, $unique_id, $trx_tree )
+		return WC_ecomprocessing_Transactions_Tree::canVoid(
+			$trx_tree = WC_ecomprocessing_Transactions_Tree::getTransactionsListFromOrder( $order ),
+			WC_ecomprocessing_Transactions_Tree::getTrxFromOrder( $order, $unique_id, $trx_tree )
 		);
 	}
 
@@ -942,8 +964,8 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 	 * @return bool
 	 */
 	public static function canRefund( WC_Order $order, $unique_id ) {
-		return WC_EComprocessing_Transactions_Tree::canRefund(
-			(array) WC_EComprocessing_Transactions_Tree::getTrxFromOrder( $order, $unique_id )
+		return WC_ecomprocessing_Transactions_Tree::canRefund(
+			(array) WC_ecomprocessing_Transactions_Tree::getTrxFromOrder( $order, $unique_id )
 		);
 	}
 
@@ -958,12 +980,12 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 		$reason   = $data['reason'];
 		$amount   = $data['amount'];
 
-		$order = WC_EComprocessing_Order_Helper::getOrderById( $order_id );
+		$order = WC_ecomprocessing_Order_Helper::getOrderById( $order_id );
 
-		$payment_gateway = WC_EComprocessing_Order_Helper::getPaymentMethodInstanceByOrder( $order );
+		$payment_gateway = WC_ecomprocessing_Order_Helper::getPaymentMethodInstanceByOrder( $order );
 
 		if ( ! $order || ! $order->get_transaction_id() ) {
-			return WC_EComprocessing_Helper::getWPError( 'No order exists with the specified reference id' );
+			return WC_ecomprocessing_Helper::getWPError( 'No order exists with the specified reference id' );
 		}
 		try {
 			$payment_gateway->set_credentials();
@@ -981,7 +1003,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 						$reason
 					)
 					->setRemoteIp(
-						WC_EComprocessing_Helper::get_client_remote_ip_address()
+						WC_ecomprocessing_Helper::get_client_remote_ip_address()
 					)
 					->setReferenceId(
 						$data['trx_id']
@@ -994,7 +1016,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 					);
 
 			if ( Types::getCaptureTransactionClass( Types::KLARNA_AUTHORIZE ) === $type ) {
-			    $genesis->request()->setItems( WC_EComprocessing_Order_Helper::getKlarnaCustomParamItems( $order ) );
+			    $genesis->request()->setItems( WC_ecomprocessing_Order_Helper::getKlarnaCustomParamItems( $order ) );
 			}
 
 			$genesis->execute();
@@ -1002,7 +1024,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 			$response = $genesis->response()->getResponseObject();
 
 			if ( $response->status == \Genesis\API\Constants\Transaction\States::APPROVED ) {
-				WC_EComprocessing_Order_Helper::setOrderMetaData( $order_id, self::META_TRANSACTION_CAPTURE_ID, $response->unique_id );
+				WC_ecomprocessing_Order_Helper::setOrderMetaData( $order_id, self::META_TRANSACTION_CAPTURE_ID, $response->unique_id );
 
 				$order->add_order_note(
 					static::getTranslatedText( 'Payment Captured!' ) . PHP_EOL . PHP_EOL .
@@ -1012,16 +1034,16 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 
 				$response->parent_id = $data['trx_id'];
 
-				WC_EComprocessing_Order_Helper::saveTrxListToOrder( $order, [ $response ] );
+				WC_ecomprocessing_Order_Helper::saveTrxListToOrder( $order, [ $response ] );
 
 				return $response;
 			}
 
-			return WC_EComprocessing_Helper::getWPError( $response->technical_message );
+			return WC_ecomprocessing_Helper::getWPError( $response->technical_message );
 		} catch ( \Exception $exception ) {
-			WC_EComprocessing_Helper::logException( $exception );
+			WC_ecomprocessing_Helper::logException( $exception );
 
-			return WC_EComprocessing_Helper::getWPError( $exception );
+			return WC_ecomprocessing_Helper::getWPError( $exception );
 		}
 	}
 
@@ -1032,13 +1054,18 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 	 * @return string
 	 */
 	protected static function get_capture_trx_type( WC_Order $order ) {
-		$auth = WC_EComprocessing_Transactions_Tree::createFromOrder( $order )->getAuthorizeTrx();
+		$auth = WC_ecomprocessing_Transactions_Tree::createFromOrder( $order )->getAuthorizeTrx();
 
 		if ( empty( $auth ) ) {
 			throw new Exception( 'Missing Authorize transaction' );
 		}
 
-		if ( Types::isAuthorize( $auth->type ) || Types::GOOGLE_PAY === $auth->type ) {
+		if (
+			Types::isAuthorize( $auth->type ) ||
+			Types::GOOGLE_PAY === $auth->type ||
+			Types::PAY_PAL === $auth->type ||
+			Types::APPLE_PAY === $auth->type
+		) {
 			return Types::getCaptureTransactionClass( $auth->type );
         }
 
@@ -1062,7 +1089,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 
 		try {
 			$order_id = absint( $_POST['order_id'] );
-			$order    = WC_EComprocessing_Order_Helper::getOrderById( $order_id );
+			$order    = WC_ecomprocessing_Order_Helper::getOrderById( $order_id );
 			$trx_id   = sanitize_text_field( $_POST['trx_id'] );
 
 			if ( ! static::canCapture( $order, $trx_id ) ) {
@@ -1077,7 +1104,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 			$capture_amount = wc_format_decimal( sanitize_text_field( $_POST['capture_amount'] ) );
 			$capture_reason = sanitize_text_field( $_POST['capture_reason'] );
 
-			$captured_amount = WC_EComprocessing_Transactions_Tree::getTotalCapturedAmount( $order );
+			$captured_amount = WC_ecomprocessing_Transactions_Tree::getTotalCapturedAmount( $order );
 			$max_capture     = wc_format_decimal( $order->get_total() - $captured_amount );
 
 			if ( ! $capture_amount || $max_capture < $capture_amount || 0 > $capture_amount ) {
@@ -1115,14 +1142,14 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 					'capture' => array(
 						'total'           => array(
 							'amount'    => $captured_amount,
-							'formatted' => WC_EComprocessing_Order_Helper::formatPrice(
+							'formatted' => WC_ecomprocessing_Order_Helper::formatPrice(
 								$captured_amount,
 								$order
 							),
 						),
 						'total_available' => array(
 							'amount'    => $capture_left > 0 ? $capture_left : '',
-							'formatted' => WC_EComprocessing_Order_Helper::formatPrice(
+							'formatted' => WC_ecomprocessing_Order_Helper::formatPrice(
 								$capture_left,
 								$order
 							),
@@ -1153,7 +1180,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 
 		try {
 			$order_id    = absint( $_POST['order_id'] );
-			$order       = WC_EComprocessing_Order_Helper::getOrderById( $order_id );
+			$order       = WC_ecomprocessing_Order_Helper::getOrderById( $order_id );
 			$void_trx_id = sanitize_text_field( $_POST['trx_id'] );
 
 			if ( ! static::canVoid( $order, $void_trx_id ) ) {
@@ -1167,7 +1194,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 
 			$void_reason = sanitize_text_field( $_POST['void_reason'] );
 
-			$payment_gateway = WC_EComprocessing_Order_Helper::getPaymentMethodInstanceByOrder( $order );
+			$payment_gateway = WC_ecomprocessing_Order_Helper::getPaymentMethodInstanceByOrder( $order );
 
 			if ( ! $order || ! $order->get_transaction_id() ) {
 				return false;
@@ -1188,7 +1215,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 						$void_reason
 					)
 					->setRemoteIp(
-						WC_EComprocessing_Helper::get_client_remote_ip_address()
+						WC_ecomprocessing_Helper::get_client_remote_ip_address()
 					)
 					->setReferenceId(
 						$void_trx_id
@@ -1199,7 +1226,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 				// Create the refund object
 				$gatewayResponse = $void->response()->getResponseObject();
 			} catch ( \Exception $exception ) {
-				$gatewayResponse = WC_EComprocessing_Helper::getWPError( $exception );
+				$gatewayResponse = WC_ecomprocessing_Helper::getWPError( $exception );
 			}
 
 			if ( is_wp_error( $gatewayResponse ) ) {
@@ -1219,7 +1246,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 
 				$gatewayResponse->parent_id = $void_trx_id;
 
-				WC_EComprocessing_Order_Helper::saveTrxListToOrder( $order, [ $gatewayResponse ] );
+				WC_ecomprocessing_Order_Helper::saveTrxListToOrder( $order, [ $gatewayResponse ] );
 			} else {
 				throw new Exception(
 					$gatewayResponse->message
@@ -1234,7 +1261,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 			wp_send_json_success( $response_data );
 			return true;
 		} catch ( Exception $exception ) {
-			WC_EComprocessing_Helper::logException( $exception );
+			WC_ecomprocessing_Helper::logException( $exception );
 
 			wp_send_json_error(
 				array(
@@ -1253,13 +1280,13 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 	 * @return void
 	 */
 	public function displayAdminOrderAfterTotals( $order_id ) {
-		$order = WC_EComprocessing_Order_Helper::getOrderById( $order_id );
+		$order = WC_ecomprocessing_Order_Helper::getOrderById( $order_id );
 
 		if ( $order->get_payment_method() != $this->id ) {
 			return;
 		}
 
-		$captured_amount = WC_EComprocessing_Transactions_Tree::getTotalCapturedAmount( $order );
+		$captured_amount = WC_ecomprocessing_Transactions_Tree::getTotalCapturedAmount( $order );
 
 		if ( $captured_amount ) {
 			$this->fetchTemplate(
@@ -1321,12 +1348,12 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 	 */
 	protected function meet_subscription_requirements() {
 		// The Method Availability is only limited to the WooCommerce Checkout process.
-		if ( null === WC_EComprocessing_Subscription_Helper::get_cart() ) {
+		if ( null === WC_ecomprocessing_Subscription_Helper::get_cart() ) {
 			return true;
 		}
 
 		// If the plugin Method does not have Subscriptions enabled, do not show it on the Checkout.
-		if ( ! $this->isSubscriptionEnabled() && WC_EComprocessing_Subscription_Helper::is_cart_has_subscriptions() ) {
+		if ( ! $this->isSubscriptionEnabled() && WC_ecomprocessing_Subscription_Helper::is_cart_has_subscriptions() ) {
 			return false;
 		}
 
@@ -1344,7 +1371,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 	 * @return bool
 	 */
 	protected function is_applicable() {
-		return WC_EComprocessing_Genesis_Helper::checkGenesisRequirementsVerified() === true;
+		return WC_ecomprocessing_Genesis_Helper::checkGenesisRequirementsVerified() === true;
 	}
 
 	/**
@@ -1447,6 +1474,43 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 	}
 
 	/**
+	 * Admin panel Return redirect urls fields definition
+	 *
+	 * @return array
+	 */
+	protected function build_redirect_form_fields() {
+		$form_fields = array(
+			'return_redirect' => array(
+				'type'        => 'title',
+				'title'       => 'Return redirects',
+			),
+			self::SETTING_KEY_REDIRECT_FAILURE => array(
+				'type'        => 'select',
+				'title'       => static::getTranslatedText( 'Redirect upon failure' ),
+				'options'     => $this->get_available_redirect_pages(),
+				'description' => static::getTranslatedText( 'Select page where to redirect customer upon failed payment' ),
+				'desc_tip'    => true,
+				'default'     => self::SETTING_VALUE_ORDER,
+			),
+		);
+
+		if ( WC_ecomprocessing_Checkout::get_method_code() === self::get_method_code() ) {
+			$form_fields += array(
+				self::SETTING_KEY_REDIRECT_CANCEL => array(
+					'type'        => 'select',
+					'title'       => static::getTranslatedText( 'Redirect upon cancel' ),
+					'options'     => $this->get_available_redirect_pages(),
+					'description' => static::getTranslatedText( 'Select page where to redirect customer upon cancelled payment' ),
+					'desc_tip'    => true,
+					'default'     => self::SETTING_VALUE_ORDER,
+				),
+			);
+		}
+
+		return $form_fields;
+	}
+
+	/**
 	 * Admin Panel Subscription Field Definition
 	 *
 	 * @return array
@@ -1530,6 +1594,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 				wp_redirect( wc_get_page_permalink( 'cart' ) );
 			} else {
 				$this->set_one_time_token( $order_id, '|CLEAR|' );
+				$return_url = $order->get_view_order_url();
 
 				switch ( esc_sql( $_GET['act'] ) ) {
 					case 'success':
@@ -1537,7 +1602,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 							'Your payment has been completed successfully.'
 						);
 
-						WC_EComprocessing_Message_Helper::addSuccessNotice( $notice );
+						WC_ecomprocessing_Message_Helper::addSuccessNotice( $notice );
 						break;
 					case 'failure':
 						$notice = static::getTranslatedText(
@@ -1547,8 +1612,13 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 						WC()->session->set( 'order_awaiting_payment', false );
 						$order->update_status( self::ORDER_STATUS_CANCELLED, $notice );
 
-						WC_EComprocessing_Message_Helper::addErrorNotice( $notice );
+						WC_ecomprocessing_Message_Helper::addErrorNotice( $notice );
+
+						if ( $this->getMethodSetting( self::SETTING_KEY_REDIRECT_FAILURE ) === self::SETTING_VALUE_CHECKOUT ) {
+							$return_url = wc_get_checkout_url();
+						}
 						break;
+					// TODO Remove unused 'cancel' case
 					case 'cancel':
 						$note = static::getTranslatedText(
 							'The customer cancelled their payment session'
@@ -1559,7 +1629,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 						break;
 				}
 
-				header( 'Location: ' . $order->get_view_order_url() );
+				header( 'Location: ' . $return_url );
 			}
 		}
 	}
@@ -1583,18 +1653,18 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 				$reconcile = $notification->getReconciliationObject();
 
 				if ( $reconcile ) {
-					$order = WC_EComprocessing_Order_Helper::load_order_from_reconcile_object(
+					$order = WC_ecomprocessing_Order_Helper::load_order_from_reconcile_object(
 						$reconcile,
 						$this->getCheckoutTransactionIdMetaKey()
 					);
 
-					if ( ! WC_EComprocessing_Order_Helper::isValidOrder( $order ) ) {
+					if ( ! WC_ecomprocessing_Order_Helper::isValidOrder( $order ) ) {
 						throw new \Exception( 'Invalid WooCommerce Order!' );
 					}
 
 					$this->updateOrderStatus( $order, $reconcile );
 
-					if ( WC_EComprocessing_Subscription_Helper::isInitRecurringReconciliation( $reconcile ) ) {
+					if ( WC_ecomprocessing_Subscription_Helper::isInitRecurringReconciliation( $reconcile ) ) {
 						$this->process_init_recurring_reconciliation( $order, $reconcile );
 					}
 
@@ -1624,7 +1694,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 	 * @return array
 	 */
 	protected function populateGateRequestData( $order, $isRecurring = false ) {
-		if ( ! WC_EComprocessing_Order_Helper::isValidOrder( $order ) ) {
+		if ( ! WC_ecomprocessing_Order_Helper::isValidOrder( $order ) ) {
 			throw new \Exception( 'Invalid WooCommerce Order!' );
 		}
 
@@ -1632,7 +1702,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 			'transaction_id'     => static::generateTransactionId( $order->get_id() ),
 			'amount'             => (float) $order->get_total(),
 			'currency'           => $order->get_currency(),
-			'usage'              => WC_EComprocessing_Genesis_Helper::getPaymentTransactionUsage( false ),
+			'usage'              => WC_ecomprocessing_Genesis_Helper::getPaymentTransactionUsage( false ),
 			'description'        => $this->get_item_description( $order ),
 			'customer_email'     => $order->get_billing_email(),
 			'customer_phone'     => $order->get_billing_phone(),
@@ -1712,11 +1782,11 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 	 * @return bool
 	 */
 	protected static function getHasOrderValidMeta( $order, $meta_key ) {
-		if ( ! WC_EComprocessing_Order_Helper::isValidOrder( $order ) ) {
-			$order = WC_EComprocessing_Order_Helper::getOrderById( $order );
+		if ( ! WC_ecomprocessing_Order_Helper::isValidOrder( $order ) ) {
+			$order = WC_ecomprocessing_Order_Helper::getOrderById( $order );
 		}
 
-		$data = WC_EComprocessing_Order_Helper::getOrderMetaData(
+		$data = WC_ecomprocessing_Order_Helper::getOrderMetaData(
 			$order->get_id(),
 			$meta_key
 		);
@@ -1734,7 +1804,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 	 * @throws Exception
 	 */
 	protected function updateOrderStatus( $order, $gateway_response_object ) {
-		if ( ! WC_EComprocessing_Order_Helper::isValidOrder( $order ) ) {
+		if ( ! WC_ecomprocessing_Order_Helper::isValidOrder( $order ) ) {
 			throw new \Exception( 'Invalid WooCommerce Order!' );
 		}
 
@@ -1751,7 +1821,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 			return;
 		}
 
-		$payment_transaction = WC_EComprocessing_Genesis_Helper::getReconcilePaymentTransaction( $gateway_response_object );
+		$payment_transaction = WC_ecomprocessing_Genesis_Helper::getReconcilePaymentTransaction( $gateway_response_object );
 
 		// Tweak for handling Processing Gensis Events that are missing in the Trx List & Hierarchy
 		if ( isset( $payment_transaction->reference_transaction_unique_id ) ) {
@@ -1780,7 +1850,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 
 				break;
 			case \Genesis\API\Constants\Transaction\States::DECLINED:
-			    $has_payment = WC_EComprocessing_Genesis_Helper::has_payment( $gateway_response_object );
+			    $has_payment = WC_ecomprocessing_Genesis_Helper::has_payment( $gateway_response_object );
 			    if ( ! $has_payment ) {
 					$this->update_order_status_cancelled(
 						$order,
@@ -1823,19 +1893,19 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 
 		// Do not modify whole transaction tree for the reference transactions of the Init Recurring type
 		// The Reconcile Object can bring Recurring Sale transactions and their reference transactions
-		if ( count( $raw_trx_list ) > 1 && WC_EComprocessing_Subscription_Helper::isInitRecurring( $raw_trx_list[0]->transaction_type ) ) {
+		if ( count( $raw_trx_list ) > 1 && WC_ecomprocessing_Subscription_Helper::isInitRecurring( $raw_trx_list[0]->transaction_type ) ) {
 			$raw_trx_list = [ $raw_trx_list[0] ];
 		}
 
-		WC_EComprocessing_Order_Helper::saveTrxListToOrder(
+		WC_ecomprocessing_Order_Helper::saveTrxListToOrder(
 			$order,
 			$raw_trx_list
 		);
 
 		// Update the order, just to be sure, sometimes transaction is not being set!
-		// WC_EComprocessing_Order_Helper::setOrderMetaData($order->id, self::META_TRANSACTION_ID, $gatewayResponseObject->unique_id);
+		// WC_ecomprocessing_Order_Helper::setOrderMetaData($order->id, self::META_TRANSACTION_ID, $gatewayResponseObject->unique_id);
 		// Save the terminal token, through which we processed the transaction
-		// WC_EComprocessing_Order_Helper::setOrderMetaData($order->id, self::META_TRANSACTION_TERMINAL_TOKEN, $gatewayResponseObject->terminal_token);
+		// WC_ecomprocessing_Order_Helper::setOrderMetaData($order->id, self::META_TRANSACTION_TERMINAL_TOKEN, $gatewayResponseObject->terminal_token);
 	}
 
 	/**
@@ -1861,14 +1931,14 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 			' (' . $gateway_response_object->technical_message . ')' : '';
 		$fully_refunded            = false;
 		$total_order_amount        = $order->get_total();
-		$payment_transactions      = WC_EComprocessing_Genesis_Helper::getReconcilePaymentTransaction(
+		$payment_transactions      = WC_ecomprocessing_Genesis_Helper::getReconcilePaymentTransaction(
 			$gateway_response_object
 		);
 
 		switch ( $order->get_payment_method() ) {
-			case WC_EComprocessing_Checkout::get_method_code():
+			case WC_ecomprocessing_Checkout::get_method_code():
 				if ( $payment_transactions instanceof ArrayObject && $payment_transactions->count() > 1 ) {
-					$refund_sum = WC_EComprocessing_Genesis_Helper::get_total_refund_from_wpf_reconcile(
+					$refund_sum = WC_ecomprocessing_Genesis_Helper::get_total_refund_from_wpf_reconcile(
 						$gateway_response_object
 					);
 
@@ -1878,9 +1948,9 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 				}
 
 				if ( $payment_transactions instanceof stdClass ) {
-					$total_refunded_amount = WC_EComprocessing_Transactions_Tree::get_total_amount_without_unique_id(
+					$total_refunded_amount = WC_ecomprocessing_Transactions_Tree::get_total_amount_without_unique_id(
 						$payment_transactions->unique_id,
-						WC_EComprocessing_Transactions_Tree::getTransactionsListFromOrder( $order ),
+						WC_ecomprocessing_Transactions_Tree::getTransactionsListFromOrder( $order ),
 						\Genesis\API\Constants\Transaction\Types::REFUND
 					);
 
@@ -1889,10 +1959,10 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 				}
 
 				break;
-			case WC_EComprocessing_Direct::get_method_code():
-				$total_refunded_amount = WC_EComprocessing_Transactions_Tree::get_total_amount_without_unique_id(
+			case WC_ecomprocessing_Direct::get_method_code():
+				$total_refunded_amount = WC_ecomprocessing_Transactions_Tree::get_total_amount_without_unique_id(
 					$payment_transactions->unique_id,
-					WC_EComprocessing_Transactions_Tree::getTransactionsListFromOrder( $order ),
+					WC_ecomprocessing_Transactions_Tree::getTransactionsListFromOrder( $order ),
 					\Genesis\API\Constants\Transaction\Types::REFUND
 				);
 
@@ -1960,7 +2030,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 				);
 			} catch ( Exception $e ) {
 				// Ignore the Error
-				WC_EComprocessing_Helper::logException( $e );
+				WC_ecomprocessing_Helper::logException( $e );
 
 				$order->update_status(
 					self::ORDER_STATUS_REFUNDED,
@@ -2076,15 +2146,15 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 			$amount = $trx->amount;
 		}
 
-		$order_id = WC_EComprocessing_Order_Helper::getOrderProp( $order, 'id' );
+		$order_id = WC_ecomprocessing_Order_Helper::getOrderProp( $order, 'id' );
 
-		WC_EComprocessing_Order_Helper::setOrderMetaData(
+		WC_ecomprocessing_Order_Helper::setOrderMetaData(
 			$order_id,
 			self::META_TRANSACTION_TYPE,
 			$trx->transaction_type
 		);
 
-		WC_EComprocessing_Order_Helper::setOrderMetaData(
+		WC_ecomprocessing_Order_Helper::setOrderMetaData(
 			$order_id,
 			self::META_ORDER_TRANSACTION_AMOUNT,
 			$amount
@@ -2096,13 +2166,13 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 				: null;
 
 		if ( ! empty( $terminal_token ) ) {
-			WC_EComprocessing_Order_Helper::setOrderMetaData(
+			WC_ecomprocessing_Order_Helper::setOrderMetaData(
 				$order_id,
 				self::META_TRANSACTION_TERMINAL_TOKEN,
 				$terminal_token
 			);
 
-			WC_EComprocessing_Subscription_Helper::saveTerminalTokenToOrderSubscriptions(
+			WC_ecomprocessing_Subscription_Helper::saveTerminalTokenToOrderSubscriptions(
 				$order_id,
 				$terminal_token
 			);
@@ -2189,12 +2259,12 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 		$order_refund = false
 	) {
 		try {
-			$order = WC_EComprocessing_Order_Helper::getOrderById( $order_id );
+			$order = WC_ecomprocessing_Order_Helper::getOrderById( $order_id );
 			if ( ! $order || ! $order->get_transaction_id() ) {
 				return false;
 			}
 			if ( $order->get_status() == self::ORDER_STATUS_PENDING ) {
-				return WC_EComprocessing_Helper::getWPError(
+				return WC_ecomprocessing_Helper::getWPError(
 					static::getTranslatedText(
 						'You cannot refund a payment, because the order status is not yet updated from the payment gateway!'
 					)
@@ -2202,7 +2272,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 			}
 
 			if ( ! $transaction_id ) {
-				$reference_transaction_id = WC_EComprocessing_Order_Helper::getOrderMetaData(
+				$reference_transaction_id = WC_ecomprocessing_Order_Helper::getOrderMetaData(
 					$order_id,
 					self::META_TRANSACTION_CAPTURE_ID
 				);
@@ -2213,7 +2283,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 				$reference_transaction_id = $order->get_transaction_id();
 			}
 			if ( empty( $reference_transaction_id ) ) {
-				return WC_EComprocessing_Helper::getWPError(
+				return WC_ecomprocessing_Helper::getWPError(
 					static::getTranslatedText(
 						'You cannot refund a payment, which has not been captured yet!'
 					)
@@ -2221,7 +2291,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 			}
 
 			if ( ! static::canRefund( $order, $reference_transaction_id ) ) {
-				return WC_EComprocessing_Helper::getWPError(
+				return WC_ecomprocessing_Helper::getWPError(
 					static::getTranslatedText(
 						'You cannot refund this payment, because the payment is not captured yet or ' .
 						'the gateway does not support refunds for this transaction type!'
@@ -2231,32 +2301,32 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 
 			$refundableAmount =
 				$order->get_total() -
-				WC_EComprocessing_Transactions_Tree::getTotalRefundedAmount( $order );
+				WC_ecomprocessing_Transactions_Tree::getTotalRefundedAmount( $order );
 
 			if ( empty( $refundableAmount ) || $amount > $refundableAmount ) {
 				if ( empty( $refundableAmount ) ) {
-					return WC_EComprocessing_Helper::getWPError(
+					return WC_ecomprocessing_Helper::getWPError(
 						sprintf(
 							static::getTranslatedText(
 								'You cannot refund \'%s\', because the whole amount has already been refunded in the payment gateway!'
 							),
-							WC_EComprocessing_Order_Helper::formatMoney( $amount, $order )
+							WC_ecomprocessing_Order_Helper::formatMoney( $amount, $order )
 						)
 					);
 				}
 
-				return WC_EComprocessing_Helper::getWPError(
+				return WC_ecomprocessing_Helper::getWPError(
 					sprintf(
 						static::getTranslatedText(
 							'You cannot refund \'%s\', because the available amount for refund in the payment gateway is \'%s\'!'
 						),
-						WC_EComprocessing_Order_Helper::formatMoney( $amount, $order ),
-						WC_EComprocessing_Order_Helper::formatMoney( $refundableAmount, $order )
+						WC_ecomprocessing_Order_Helper::formatMoney( $amount, $order ),
+						WC_ecomprocessing_Order_Helper::formatMoney( $refundableAmount, $order )
 					)
 				);
 			}
 
-			$payment_gateway = WC_EComprocessing_Order_Helper::getPaymentMethodInstanceByOrder( $order );
+			$payment_gateway = WC_ecomprocessing_Order_Helper::getPaymentMethodInstanceByOrder( $order );
 			$payment_gateway->set_credentials();
 			$payment_gateway->set_terminal_token( $order );
 
@@ -2272,7 +2342,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 						$reason
 					)
 					->setRemoteIp(
-						WC_EComprocessing_Helper::get_client_remote_ip_address()
+						WC_ecomprocessing_Helper::get_client_remote_ip_address()
 					)
 					->setReferenceId(
 						$reference_transaction_id
@@ -2285,7 +2355,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 					);
 
 			if ( Types::getRefundTransactionClass( Types::KLARNA_CAPTURE ) === $type ) {
-			    $genesis->request()->setItems( WC_EComprocessing_Order_Helper::getKlarnaCustomParamItems( $order ) );
+			    $genesis->request()->setItems( WC_ecomprocessing_Order_Helper::getKlarnaCustomParamItems( $order ) );
 			}
 
 			$genesis->execute();
@@ -2294,7 +2364,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 
 			$response->parent_id = $reference_transaction_id;
 
-			WC_EComprocessing_Order_Helper::saveTrxListToOrder( $order, [ $response ] );
+			WC_ecomprocessing_Order_Helper::saveTrxListToOrder( $order, [ $response ] );
 
 			switch ( $response->status ) {
 				case  \Genesis\API\Constants\Transaction\States::APPROVED:
@@ -2312,7 +2382,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 
 					break;
 				default:
-					return WC_EComprocessing_Helper::getWPError(
+					return WC_ecomprocessing_Helper::getWPError(
 						isset( $response->technical_message ) ?
 							$response->technical_message : static::getTranslatedText( 'Unknown Error' )
 					);
@@ -2327,22 +2397,22 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 			/**
 			 * Cancel Subscription when Init Recurring
 			 */
-			if ( WC_EComprocessing_Subscription_Helper::hasOrderSubscriptions( $order_id ) ) {
+			if ( WC_ecomprocessing_Subscription_Helper::hasOrderSubscriptions( $order_id ) ) {
 				$payment_gateway->cancelOrderSubscriptions( $order );
 			}
 
 			if ( \Genesis\API\Constants\Transaction\States::PENDING_ASYNC === $response->status ) {
 				// Stop execution of the Refund
-				return WC_EComprocessing_Helper::getWPError(
+				return WC_ecomprocessing_Helper::getWPError(
 					static::getTranslatedText( 'Refund is pending for Approval from the Gateway' )
 				);
 			}
 
 			return $response;
 		} catch ( \Exception $exception ) {
-			WC_EComprocessing_Helper::logException( $exception );
+			WC_ecomprocessing_Helper::logException( $exception );
 
-			return WC_EComprocessing_Helper::getWPError( $exception );
+			return WC_ecomprocessing_Helper::getWPError( $exception );
 		}
 	}
 
@@ -2353,18 +2423,18 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 	 * @return void
 	 */
 	protected function cancelOrderSubscriptions( $order ) {
-		$orderTransactionType = WC_EComprocessing_Order_Helper::getOrderMetaData(
+		$orderTransactionType = WC_ecomprocessing_Order_Helper::getOrderMetaData(
 			$order->get_id(),
 			self::META_TRANSACTION_TYPE
 		);
 
-		if ( ! WC_EComprocessing_Subscription_Helper::isInitRecurring( $orderTransactionType ) ) {
+		if ( ! WC_ecomprocessing_Subscription_Helper::isInitRecurring( $orderTransactionType ) ) {
 			return;
 		}
 
-		WC_EComprocessing_Subscription_Helper::updateOrderSubscriptionsStatus(
+		WC_ecomprocessing_Subscription_Helper::updateOrderSubscriptionsStatus(
 			$order,
-			WC_EComprocessing_Subscription_Helper::WC_SUBSCRIPTION_STATUS_CANCELED,
+			WC_ecomprocessing_Subscription_Helper::WC_SUBSCRIPTION_STATUS_CANCELED,
 			sprintf(
 				static::getTranslatedText(
 					'Subscription cancelled due to Refunded Order #%s'
@@ -2381,7 +2451,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 	 * @return string
 	 */
 	protected static function get_refund_trx_type( WC_Order $order ) {
-		$settlement = WC_EComprocessing_Transactions_Tree::createFromOrder( $order )->getSettlementTrx();
+		$settlement = WC_ecomprocessing_Transactions_Tree::createFromOrder( $order )->getSettlementTrx();
 
 		if ( empty( $settlement ) ) {
 			throw new Exception( 'Missing Settlement Transaction' );
@@ -2416,13 +2486,13 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 	 * @throws \Genesis\Exceptions\InvalidMethod
 	 */
 	protected function process_subscription_payment( $order, $amount ) {
-		$referenceId = WC_EComprocessing_Subscription_Helper::getOrderInitRecurringIdMeta( $order->get_id() );
+		$referenceId = WC_ecomprocessing_Subscription_Helper::getOrderInitRecurringIdMeta( $order->get_id() );
 
 		\Genesis\Config::setToken(
 			$this->getRecurringToken( $order )
 		);
 
-		$genesis = WC_EComprocessing_Genesis_Helper::getGatewayRequestByTxnType(
+		$genesis = WC_ecomprocessing_Genesis_Helper::getGatewayRequestByTxnType(
 			Types::RECURRING_SALE
 		);
 
@@ -2435,10 +2505,10 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 					$referenceId
 				)
 				->setUsage(
-					WC_EComprocessing_Genesis_Helper::getPaymentTransactionUsage( true )
+					WC_ecomprocessing_Genesis_Helper::getPaymentTransactionUsage( true )
 				)
 				->setRemoteIp(
-					WC_EComprocessing_Helper::get_client_remote_ip_address()
+					WC_ecomprocessing_Helper::get_client_remote_ip_address()
 				)
 				->setCurrency(
 					$order->get_currency()
@@ -2451,7 +2521,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 
 			return $genesis->response()->getResponseObject();
 		} catch ( Exception $recurringException ) {
-			return WC_EComprocessing_Helper::getWPError( $recurringException );
+			return WC_ecomprocessing_Helper::getWPError( $recurringException );
 		}
 	}
 
@@ -2466,7 +2536,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 		// Try to gather more entropy
 		$unique = sprintf(
 			'|%s|%s|%s|%s|',
-			WC_EComprocessing_Helper::get_client_remote_ip_address(),
+			WC_ecomprocessing_Helper::get_client_remote_ip_address(),
 			microtime( true ),
 			@$_SERVER['HTTP_USER_AGENT'],
 			$input
@@ -2492,16 +2562,16 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 		foreach ( $order->get_items() as $item ) {
 			$product_description = sprintf(
 				'%s x %d',
-				WC_EComprocessing_Order_Helper::getItemName( $item ),
-				WC_EComprocessing_Order_Helper::getItemQuantity( $item )
+				WC_ecomprocessing_Order_Helper::getItemName( $item ),
+				WC_ecomprocessing_Order_Helper::getItemQuantity( $item )
 			);
 
 			$subscription_description = '';
-			if ( WC_EComprocessing_Subscription_Helper::isSubscriptionProduct( $item->get_product() ) ) {
-				$subscription_description = WC_EComprocessing_Subscription_Helper::filter_wc_subscription_price(
+			if ( WC_ecomprocessing_Subscription_Helper::isSubscriptionProduct( $item->get_product() ) ) {
+				$subscription_description = WC_ecomprocessing_Subscription_Helper::filter_wc_subscription_price(
 					static::get_cart(),
 					$item->get_product(),
-					WC_EComprocessing_Order_Helper::getItemQuantity( $item )
+					WC_ecomprocessing_Order_Helper::getItemQuantity( $item )
 				);
 			}
 
@@ -2548,6 +2618,10 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 			$result .= '//' . $info['host'];
 		}
 
+		if ( $info['port'] ) {
+			$result .= ':' . $info['port'];
+		}
+
 		if ( $info['path'] ) {
 			$result .= $info['path'];
 		}
@@ -2567,7 +2641,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 	 * @return mixed|string
 	 */
 	protected function get_one_time_token( $order_id ) {
-		return WC_EComprocessing_Order_Helper::getOrderMetaData(
+		return WC_ecomprocessing_Order_Helper::getOrderMetaData(
 			$order_id,
 			self::META_CHECKOUT_RETURN_TOKEN
 		);
@@ -2579,7 +2653,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 	 * @param $order_id
 	 */
 	protected function set_one_time_token( $order_id, $value ) {
-		WC_EComprocessing_Order_Helper::setOrderMetaData(
+		WC_ecomprocessing_Order_Helper::setOrderMetaData(
 			$order_id,
 			self::META_CHECKOUT_RETURN_TOKEN,
 			$value
@@ -2674,7 +2748,7 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * Get the the Business Attributes form fields
+	 * Get the Business Attributes form fields
 	 *
 	 * @return array
 	 */
@@ -3293,6 +3367,18 @@ abstract class WC_EComprocessing_Method extends WC_Payment_Gateway {
 
 		return $cart;
 	}
+
+	/**
+	 * Return list of available return pages
+	 *
+	 * @return array
+	 */
+	protected function get_available_redirect_pages() {
+		return array(
+			self::SETTING_VALUE_ORDER    => 'Order page (default)',
+			self::SETTING_VALUE_CHECKOUT => 'Checkout page',
+		);
+	}
 }
 
-WC_EComprocessing_Method::registerHelpers();
+WC_ecomprocessing_Method::registerHelpers();

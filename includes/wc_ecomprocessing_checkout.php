@@ -19,24 +19,26 @@
 
 use Genesis\API\Constants\Transaction\Names;
 use Genesis\API\Constants\Transaction\Types;
+use Genesis\API\Constants\Banks;
+use Genesis\Utils\Common as CommonUtils;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit( 0 );
 }
 
-if ( ! class_exists( 'WC_EComprocessing_Method' ) ) {
+if ( ! class_exists( 'WC_ecomprocessing_Method' ) ) {
 	require_once dirname( dirname( __FILE__ ) ) . '/classes/wc_ecomprocessing_method_base.php';
 }
 
 /**
  * E-Comprocessing Checkout
  *
- * @class   WC_EComprocessing_Checkout
+ * @class   WC_ecomprocessing_Checkout
  * @extends WC_Payment_Gateway
  *
  * @SuppressWarnings(PHPMD)
  */
-class WC_EComprocessing_Checkout extends WC_EComprocessing_Method {
+class WC_ecomprocessing_Checkout extends WC_ecomprocessing_Method {
 
 	/**
 	 * Payment Method Code
@@ -52,6 +54,7 @@ class WC_EComprocessing_Checkout extends WC_EComprocessing_Method {
 	const SETTING_KEY_CHECKOUT_LANGUAGE        = 'checkout_language';
 	const SETTING_KEY_INIT_RECURRING_TXN_TYPES = 'init_recurring_txn_types';
 	const SETTING_KEY_TOKENIZATION             = 'tokenization';
+	const SETTING_KEY_BANK_CODES               = 'bank_codes';
 
 	/**
 	 * Additional Order/User Meta Constants
@@ -145,19 +148,19 @@ class WC_EComprocessing_Checkout extends WC_EComprocessing_Method {
 		}
 
 		if ( ! $areApiTransactionTypesDefined ) {
-			WC_EComprocessing_Helper::printWpNotice(
+			WC_ecomprocessing_Helper::printWpNotice(
 				static::getTranslatedText( 'You must specify at least one transaction type in order to be able to use this payment method!' ),
-				WC_EComprocessing_Helper::WP_NOTICE_TYPE_ERROR
+				WC_ecomprocessing_Helper::WP_NOTICE_TYPE_ERROR
 			);
 		}
 
 		if ( $this->getMethodBoolSetting( self::SETTING_KEY_TOKENIZATION ) ) {
-			WC_EComprocessing_Helper::printWpNotice(
+			WC_ecomprocessing_Helper::printWpNotice(
 				static::getTranslatedText(
 					'Tokenization is enabled for Web Payment Form, ' .
 					'please make sure Guest Checkout is disabled.'
 				),
-				WC_EComprocessing_Helper::WP_NOTICE_TYPE_ERROR
+				WC_ecomprocessing_Helper::WP_NOTICE_TYPE_ERROR
 			);
 		}
 
@@ -185,6 +188,14 @@ class WC_EComprocessing_Checkout extends WC_EComprocessing_Method {
 				'description' => static::getTranslatedText( 'Select transaction type for the payment transaction' ),
 				'desc_tip'    => true,
 			),
+			self::SETTING_KEY_BANK_CODES        => array(
+				'type'        => 'multiselect',
+				'css'         => 'height:auto',
+				'title'       => static::getTranslatedText( 'Bank code(s) for Online banking' ),
+				'options'     => $this->get_available_bank_codes(),
+				'description' => static::getTranslatedText( 'Select Bank code(s) for Online banking transaction type' ),
+				'desc_tip'    => true,
+			),
 			self::SETTING_KEY_CHECKOUT_LANGUAGE => array(
 				'type'        => 'select',
 				'title'       => static::getTranslatedText( 'Checkout Language' ),
@@ -193,14 +204,16 @@ class WC_EComprocessing_Checkout extends WC_EComprocessing_Method {
 				'desc_tip'    => true,
 			),
 			self::SETTING_KEY_TOKENIZATION      => array(
-				'type'    => 'checkbox',
-				'title'   => static::getTranslatedText( 'Enable/Disable' ),
-				'label'   => static::getTranslatedText( 'Enable Tokenization' ),
-				'default' => self::SETTING_VALUE_NO,
+				'type'        => 'checkbox',
+				'title'       => static::getTranslatedText( 'Enable/Disable' ),
+				'label'       => static::getTranslatedText( 'Enable Tokenization' ),
+				'default'     => self::SETTING_VALUE_NO,
 			),
 		);
 
 		$this->form_fields += $this->build_subscription_form_fields();
+
+		$this->form_fields += $this->build_redirect_form_fields();
 
 		$this->form_fields += $this->build_business_attributes_form_fields();
 	}
@@ -230,13 +243,19 @@ class WC_EComprocessing_Checkout extends WC_EComprocessing_Method {
 		// Exclude GooglePay transaction in order to provide choosable payment types
 		array_push( $excluded_types, Types::GOOGLE_PAY );
 
+		// Exclude PayPal transaction in order to provide choosable payment types
+		array_push( $excluded_types, Types::PAY_PAL );
+
+		// Exclude Apple Pay transaction in order to provide choosable payment types
+		array_push( $excluded_types, Types::APPLE_PAY );
+
 		// Exclude Transaction types
 		$transaction_types = array_diff( $transaction_types, $excluded_types );
 
 		// Add PPRO Types
 		$ppro_types = array_map(
 			function ( $type ) {
-				return $type . WC_EComprocessing_Method::PPRO_TRANSACTION_SUFFIX;
+				return $type . WC_ecomprocessing_Method::PPRO_TRANSACTION_SUFFIX;
 			},
 			\Genesis\API\Constants\Payment\Methods::getMethods()
 		);
@@ -244,15 +263,44 @@ class WC_EComprocessing_Checkout extends WC_EComprocessing_Method {
 		// Add Google Pay Methods
 		$google_pay_types = array_map(
 			function ( $type ) {
-				return WC_EComprocessing_Method::GOOGLE_PAY_TRANSACTION_PREFIX . $type;
+				return WC_ecomprocessing_Method::GOOGLE_PAY_TRANSACTION_PREFIX . $type;
 			},
 			[
-				WC_EComprocessing_Method::GOOGLE_PAY_PAYMENT_TYPE_AUTHORIZE,
-				WC_EComprocessing_Method::GOOGLE_PAY_PAYMENT_TYPE_SALE,
+				WC_ecomprocessing_Method::GOOGLE_PAY_PAYMENT_TYPE_AUTHORIZE,
+				WC_ecomprocessing_Method::GOOGLE_PAY_PAYMENT_TYPE_SALE,
 			]
 		);
 
-		$transaction_types = array_merge( $transaction_types, $ppro_types, $google_pay_types );
+		// Add PayPal Methods
+		$paypal_types = array_map(
+			function ( $type ) {
+				return WC_ecomprocessing_Method::PAYPAL_TRANSACTION_PREFIX . $type;
+			},
+			[
+				WC_ecomprocessing_Method::PAYPAL_PAYMENT_TYPE_AUTHORIZE,
+				WC_ecomprocessing_Method::PAYPAL_PAYMENT_TYPE_SALE,
+				WC_ecomprocessing_Method::PAYPAL_PAYMENT_TYPE_EXPRESS,
+			]
+		);
+
+		// Add Apple Pay Methods
+		$apple_pay_types = array_map(
+			function ( $type ) {
+				return WC_ecomprocessing_Method::APPLE_PAY_TRANSACTION_PREFIX . $type;
+			},
+			[
+				WC_ecomprocessing_Method::APPLE_PAY_PAYMENT_TYPE_AUTHORIZE,
+				WC_ecomprocessing_Method::APPLE_PAY_PAYMENT_TYPE_SALE,
+			]
+		);
+
+		$transaction_types = array_merge(
+			$transaction_types,
+			$ppro_types,
+			$google_pay_types,
+			$paypal_types,
+			$apple_pay_types
+		);
 		asort( $transaction_types );
 
 		foreach ( $transaction_types as $type ) {
@@ -265,6 +313,17 @@ class WC_EComprocessing_Checkout extends WC_EComprocessing_Method {
 		}
 
 		return $data;
+	}
+
+	/**
+	 * Return available Bank codes for Online banking transaction type
+	 *
+	 * @return array
+	 */
+	protected function get_available_bank_codes() {
+		return array(
+			Banks::CPI => 'Interac Combined Pay-in',
+		);
 	}
 
 	/**
@@ -361,11 +420,16 @@ class WC_EComprocessing_Checkout extends WC_EComprocessing_Method {
 	 */
 	protected function populateGateRequestData( $order, $isRecurring = false ) {
 		$data = parent::populateGateRequestData( $order, $isRecurring );
+		$return_url = $order->get_view_order_url();
+
+		if ( $this->getMethodSetting( self::SETTING_KEY_REDIRECT_CANCEL ) === self::SETTING_VALUE_CHECKOUT ) {
+			$return_url = wc_get_checkout_url();
+		}
 
 		return array_merge(
 			$data,
 			array(
-				'return_cancel_url' => $order->get_cancel_order_url_raw(),
+				'return_cancel_url' => $order->get_cancel_order_url_raw( wp_slash( $return_url ) ),
 			)
 		);
 	}
@@ -411,6 +475,9 @@ class WC_EComprocessing_Checkout extends WC_EComprocessing_Method {
 				$data['notification_url']
 			)
 			->setReturnSuccessUrl(
+				$data['return_success_url']
+			)
+			->setReturnPendingUrl(
 				$data['return_success_url']
 			)
 			->setReturnFailureUrl(
@@ -554,7 +621,7 @@ class WC_EComprocessing_Checkout extends WC_EComprocessing_Method {
 	 * @return array
 	 */
 	protected function getMetaConsumerIdForLoggedUser() {
-		if ( ! WC_EComprocessing_Helper::isUserLogged() ) {
+		if ( ! WC_ecomprocessing_Helper::isUserLogged() ) {
 			return [];
 		}
 
@@ -571,7 +638,7 @@ class WC_EComprocessing_Checkout extends WC_EComprocessing_Method {
 	 * @param $consumerId
 	 */
 	protected function setGatewayConsumerIdFor( $customerEmail, $consumerId ) {
-		if ( ! WC_EComprocessing_Helper::isUserLogged() ) {
+		if ( ! WC_ecomprocessing_Helper::isUserLogged() ) {
 			return;
 		}
 
@@ -623,21 +690,32 @@ class WC_EComprocessing_Checkout extends WC_EComprocessing_Method {
 			switch ( $type ) {
 				case Types::IDEBIT_PAYIN:
 				case Types::INSTA_DEBIT_PAYIN:
-					$user_id_hash              = WC_EComprocessing_Genesis_Helper::getCurrentUserIdHash();
+					$user_id_hash              = WC_ecomprocessing_Genesis_Helper::getCurrentUserIdHash();
 					$transaction_custom_params = array(
 						'customer_account_id' => $user_id_hash,
 					);
 					break;
 				case Types::KLARNA_AUTHORIZE:
-					$transaction_custom_params = WC_EComprocessing_Order_Helper::getKlarnaCustomParamItems( $order )->toArray();
+					$transaction_custom_params = WC_ecomprocessing_Order_Helper::getKlarnaCustomParamItems( $order )->toArray();
 					break;
 				case Types::TRUSTLY_SALE:
-					$user_id         = WC_EComprocessing_Genesis_Helper::getCurrentUserId();
-					$trustly_user_id = empty( $user_id ) ? WC_EComprocessing_Genesis_Helper::getCurrentUserIdHash() : $user_id;
+					$user_id         = WC_ecomprocessing_Genesis_Helper::getCurrentUserId();
+					$trustly_user_id = empty( $user_id ) ? WC_ecomprocessing_Genesis_Helper::getCurrentUserIdHash() : $user_id;
 
 					$transaction_custom_params = array(
 						'user_id' => $trustly_user_id,
 					);
+					break;
+				case Types::ONLINE_BANKING_PAYIN:
+					$available_bank_codes = $this->getMethodSetting( self::SETTING_KEY_BANK_CODES );
+					if ( CommonUtils::isValidArray( $available_bank_codes ) ) {
+						$transaction_custom_params['bank_codes'] = array_map(
+							function ($value) {
+								return ['bank_code' => $value];
+							},
+							$available_bank_codes
+						);
+					}
 					break;
 				default:
 					$transaction_custom_params = array();
@@ -697,7 +775,7 @@ class WC_EComprocessing_Checkout extends WC_EComprocessing_Method {
 				isset( $response->redirect_url );
 
 			if ( $isWpfSuccessfullyCreated ) {
-				$this->save_checkout_trx_to_order( $response, WC_EComprocessing_Order_Helper::getOrderProp( $order, 'id' ) );
+				$this->save_checkout_trx_to_order( $response, WC_ecomprocessing_Order_Helper::getOrderProp( $order, 'id' ) );
 
 				if ( ! empty( $data['customer_email'] ) ) {
 					$this->save_tokenization_data( $data['customer_email'], $response );
@@ -727,9 +805,9 @@ class WC_EComprocessing_Checkout extends WC_EComprocessing_Method {
 				);
 			}
 
-			WC_EComprocessing_Message_Helper::addErrorNotice( $error_message );
+			WC_ecomprocessing_Message_Helper::addErrorNotice( $error_message );
 
-			WC_EComprocessing_Helper::logException( $exception );
+			WC_ecomprocessing_Helper::logException( $exception );
 
 			return false;
 		}
@@ -737,14 +815,14 @@ class WC_EComprocessing_Checkout extends WC_EComprocessing_Method {
 
 	protected function save_checkout_trx_to_order( $response_obj, $order_id ) {
 		// Save the Checkout Id
-		WC_EComprocessing_Order_Helper::setOrderMetaData(
+		WC_ecomprocessing_Order_Helper::setOrderMetaData(
 			$order_id,
 			self::META_CHECKOUT_TRANSACTION_ID,
 			$response_obj->unique_id
 		);
 
 		// Save whole trx
-		WC_EComprocessing_Order_Helper::saveInitialTrxToOrder( $order_id, $response_obj );
+		WC_ecomprocessing_Order_Helper::saveInitialTrxToOrder( $order_id, $response_obj );
 	}
 
 	/**
@@ -765,16 +843,16 @@ class WC_EComprocessing_Checkout extends WC_EComprocessing_Method {
 	 * @return bool
 	 */
 	protected function set_terminal_token( $order ) {
-		$token = WC_EComprocessing_Order_Helper::getOrderMetaData(
+		$token = WC_ecomprocessing_Order_Helper::getOrderMetaData(
 			$order->get_id(),
 			self::META_TRANSACTION_TERMINAL_TOKEN
 		);
 
 		// Check for Recurring Token
 		if ( empty( $token ) ) {
-			$token = WC_EComprocessing_Order_Helper::getOrderMetaData(
+			$token = WC_ecomprocessing_Order_Helper::getOrderMetaData(
 				$order->get_id(),
-				WC_EComprocessing_Subscription_Helper::META_RECURRING_TERMINAL_TOKEN
+				WC_ecomprocessing_Subscription_Helper::META_RECURRING_TERMINAL_TOKEN
 			);
 		}
 
@@ -806,6 +884,11 @@ class WC_EComprocessing_Checkout extends WC_EComprocessing_Method {
 		$alias_map = array_merge($alias_map, [
 			self::GOOGLE_PAY_TRANSACTION_PREFIX . self::GOOGLE_PAY_PAYMENT_TYPE_AUTHORIZE => Types::GOOGLE_PAY,
 			self::GOOGLE_PAY_TRANSACTION_PREFIX . self::GOOGLE_PAY_PAYMENT_TYPE_SALE      => Types::GOOGLE_PAY,
+			self::PAYPAL_TRANSACTION_PREFIX . self::PAYPAL_PAYMENT_TYPE_AUTHORIZE         => Types::PAY_PAL,
+			self::PAYPAL_TRANSACTION_PREFIX . self::PAYPAL_PAYMENT_TYPE_SALE              => Types::PAY_PAL,
+			self::PAYPAL_TRANSACTION_PREFIX . self::PAYPAL_PAYMENT_TYPE_EXPRESS           => Types::PAY_PAL,
+			self::APPLE_PAY_TRANSACTION_PREFIX . self::APPLE_PAY_PAYMENT_TYPE_AUTHORIZE   => Types::APPLE_PAY,
+			self::APPLE_PAY_TRANSACTION_PREFIX . self::APPLE_PAY_PAYMENT_TYPE_SALE        => Types::APPLE_PAY,
 		]);
 
 		foreach ( $selected_types as $selected_type ) {
@@ -814,11 +897,16 @@ class WC_EComprocessing_Checkout extends WC_EComprocessing_Method {
 
 				$processed_list[ $transaction_type ]['name'] = $transaction_type;
 
-				$key = Types::GOOGLE_PAY === $transaction_type ? 'payment_type' : 'payment_method';
+				$key = $this->get_custom_parameter_key( $transaction_type );
 
 				$processed_list[ $transaction_type ]['parameters'][] = array(
 					$key => str_replace(
-						[ self::PPRO_TRANSACTION_SUFFIX, self::GOOGLE_PAY_TRANSACTION_PREFIX ],
+						[
+							self::PPRO_TRANSACTION_SUFFIX,
+							self::GOOGLE_PAY_TRANSACTION_PREFIX,
+							self::PAYPAL_TRANSACTION_PREFIX,
+							self::APPLE_PAY_TRANSACTION_PREFIX,
+						],
 						'',
 						$selected_type
 					),
@@ -861,8 +949,31 @@ class WC_EComprocessing_Checkout extends WC_EComprocessing_Method {
 			return $recurringToken;
 		}
 
-		return WC_EComprocessing_Subscription_Helper::getTerminalTokenMetaFromSubscriptionOrder( $order->get_id() );
+		return WC_ecomprocessing_Subscription_Helper::getTerminalTokenMetaFromSubscriptionOrder( $order->get_id() );
+	}
+
+	/**
+	 * @param $transaction_type
+	 * @return string
+	 */
+	private function get_custom_parameter_key( $transaction_type ) {
+		switch ( $transaction_type ) {
+			case Types::PPRO:
+				$result = 'payment_method';
+				break;
+			case Types::PAY_PAL:
+				$result = 'payment_type';
+				break;
+			case Types::GOOGLE_PAY:
+			case Types::APPLE_PAY:
+				$result = 'payment_subtype';
+				break;
+			default:
+				$result = 'unknown';
+		}
+
+		return $result;
 	}
 }
 
-WC_EComprocessing_Checkout::registerStaticActions();
+WC_ecomprocessing_Checkout::registerStaticActions();

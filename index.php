@@ -6,11 +6,11 @@
  * Text Domain: woocommerce-ecomprocessing
  * Author: E-Comprocessing
  * Author URI: https://e-comprocessing.com/
- * Version: 1.12.3
+ * Version: 1.12.7
  * Requires at least: 4.0
- * Tested up to: 5.9
+ * Tested up to: 6.0.1
  * WC requires at least: 3.0.0
- * WC tested up to: 6.1.1
+ * WC tested up to: 6.8.2
  * WCS tested up to: 4.0.1
  * License: GPL-2.0
  * License URI: http://opensource.org/licenses/gpl-2.0.php
@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) ) {
 
 	if ( ! function_exists( 'woocommerce_ecomprocessing_init' ) ) {
-		function woocommerce_EComprocessing_init() {
+		function woocommerce_ecomprocessing_init() {
 			if ( ! class_exists( 'WC_Payment_Gateway' ) ) {
 				return;
 			}
@@ -54,9 +54,9 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
 			 * @return array $methods Appended Payment Gateway
 			 */
 			if ( ! function_exists( 'woocommerce_add_ecomprocessing_gateway' ) ) {
-				function woocommerce_add_EComprocessing_gateway( $methods ) {
-					array_push( $methods, 'WC_EComprocessing_Checkout' );
-					array_push( $methods, 'WC_EComprocessing_Direct' );
+				function woocommerce_add_ecomprocessing_gateway( $methods ) {
+					array_push( $methods, 'WC_ecomprocessing_Checkout' );
+					array_push( $methods, 'WC_ecomprocessing_Direct' );
 
 					return $methods;
 				}

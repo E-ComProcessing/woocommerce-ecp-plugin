@@ -25,9 +25,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Class wc_EComprocessing_genesis_helper
+ * Class wc_ecomprocessing_genesis_helper
  */
-class WC_EComprocessing_Genesis_Helper {
+class WC_ecomprocessing_Genesis_Helper {
 
 	/**
 	 * Builds full Request Class Name by Transaction Type
@@ -92,7 +92,7 @@ class WC_EComprocessing_Genesis_Helper {
 
 			return true;
 		} catch ( \Exception $exception ) {
-			return WC_EComprocessing_Helper::getWPError( $exception );
+			return WC_ecomprocessing_Helper::getWPError( $exception );
 		}
 	}
 
@@ -112,7 +112,7 @@ class WC_EComprocessing_Genesis_Helper {
 	public static function getCurrentUserIdHash( $length = 20 ) {
 		$userId = self::getCurrentUserId();
 
-		$userHash = $userId > 0 ? sha1( $userId ) : WC_EComprocessing_Method::generateTransactionId();
+		$userHash = $userId > 0 ? sha1( $userId ) : WC_ecomprocessing_Method::generateTransactionId();
 
 		return substr( $userHash, 0, $length );
 	}

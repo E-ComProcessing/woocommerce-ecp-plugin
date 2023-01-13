@@ -23,11 +23,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 ?>
 <tr>
 	<td class="label captured-total"><?php echo $payment_method::getTranslatedText( 'Captured' ); ?>:</td>
-	<?php if ( WC_EComprocessing_Helper::isWooCommerceVersion( '2.6', '>=' ) ) { ?>
+	<?php if ( WC_ecomprocessing_Helper::isWooCommerceVersion( '2.6', '>=' ) ) { ?>
 		<td width="1%"></td>
 	<?php } ?>
 	<td class="total captured-total">
-		<div class="view"><?php echo WC_EComprocessing_Order_Helper::formatPrice( $captured_amount, $order ); ?></div>
+		<div class="view"><?php echo WC_ecomprocessing_Order_Helper::formatPrice( $captured_amount, $order ); ?></div>
 	</td>
 </tr>
 

@@ -21,19 +21,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit( 0 );
 }
 
-if ( ! class_exists( 'WC_EComprocessing_Method' ) ) {
+if ( ! class_exists( 'WC_ecomprocessing_Method' ) ) {
 	require_once dirname( dirname( __FILE__ ) ) . '/classes/wc_ecomprocessing_method_base.php';
 }
 
 /**
  * E-Comprocessing Direct
  *
- * @class   WC_EComprocessing_Direct
+ * @class   WC_ecomprocessing_Direct
  * @extends WC_Payment_Gateway
  *
  * @SuppressWarnings(PHPMD)
  */
-class WC_EComprocessing_Direct extends WC_EComprocessing_Method {
+class WC_ecomprocessing_Direct extends WC_ecomprocessing_Method {
 
 	const FEATURE_DEFAULT_CREDIT_CARD_FORM = 'default_credit_card_form';
 	const WC_ACTION_CREDIT_CARD_FORM_START = 'woocommerce_credit_card_form_start';
@@ -178,7 +178,7 @@ class WC_EComprocessing_Direct extends WC_EComprocessing_Method {
 	 */
 	protected function is_applicable() {
 		return parent::is_applicable() &&
-			WC_EComprocessing_Helper::isStoreOverSecuredConnection();
+			WC_ecomprocessing_Helper::isStoreOverSecuredConnection();
 	}
 
 	/**
@@ -275,6 +275,8 @@ class WC_EComprocessing_Direct extends WC_EComprocessing_Method {
 
 		$this->form_fields += $this->build_subscription_form_fields();
 
+		$this->form_fields += $this->build_redirect_form_fields();
+
 		$this->form_fields += $this->build_business_attributes_form_fields();
 	}
 
@@ -367,7 +369,7 @@ class WC_EComprocessing_Direct extends WC_EComprocessing_Method {
 			$data,
 			array(
 				'remote_ip'        =>
-					WC_EComprocessing_Helper::get_client_remote_ip_address(),
+					WC_ecomprocessing_Helper::get_client_remote_ip_address(),
 				'transaction_type' =>
 					$isRecurring
 						? $this->getMethodSetting( self::SETTING_KEY_INIT_RECURRING_TXN_TYPE )
@@ -387,7 +389,7 @@ class WC_EComprocessing_Direct extends WC_EComprocessing_Method {
 	protected function process_order_payment( $order_id ) {
 		global $woocommerce;
 
-		$order = WC_EComprocessing_Order_Helper::getOrderById( $order_id );
+		$order = WC_ecomprocessing_Order_Helper::getOrderById( $order_id );
 
 		$data = $this->populateGateRequestData( $order );
 
@@ -402,17 +404,17 @@ class WC_EComprocessing_Direct extends WC_EComprocessing_Method {
 			$response = $genesis->response()->getResponseObject();
 
 			// Save whole trx
-			WC_EComprocessing_Order_Helper::saveInitialTrxToOrder( $order_id, $response );
+			WC_ecomprocessing_Order_Helper::saveInitialTrxToOrder( $order_id, $response );
 
 			// Create One-time token to prevent redirect abuse
 			$this->set_one_time_token( $order_id, static::generateTransactionId() );
 
-			$paymentSuccessful = WC_EComprocessing_Subscription_Helper::isInitGatewayResponseSuccessful( $response );
+			$paymentSuccessful = WC_ecomprocessing_Subscription_Helper::isInitGatewayResponseSuccessful( $response );
 
 			if ( $paymentSuccessful ) {
 				// Save the Checkout Id
-				WC_EComprocessing_Order_Helper::setOrderMetaData( $order_id, $this->getCheckoutTransactionIdMetaKey(), $response->unique_id );
-				WC_EComprocessing_Order_Helper::setOrderMetaData( $order_id, self::META_TRANSACTION_TYPE, $response->transaction_type );
+				WC_ecomprocessing_Order_Helper::setOrderMetaData( $order_id, $this->getCheckoutTransactionIdMetaKey(), $response->unique_id );
+				WC_ecomprocessing_Order_Helper::setOrderMetaData( $order_id, self::META_TRANSACTION_TYPE, $response->transaction_type );
 
 				if ( isset( $response->redirect_url ) ) {
 					return array(
@@ -439,7 +441,7 @@ class WC_EComprocessing_Direct extends WC_EComprocessing_Method {
 					);
 				}
 
-				WC_EComprocessing_Message_Helper::addErrorNotice( $error_message );
+				WC_ecomprocessing_Message_Helper::addErrorNotice( $error_message );
 
 				return false;
 			}
@@ -454,9 +456,9 @@ class WC_EComprocessing_Direct extends WC_EComprocessing_Method {
 				);
 			}
 
-			WC_EComprocessing_Message_Helper::addErrorNotice( $error_message );
+			WC_ecomprocessing_Message_Helper::addErrorNotice( $error_message );
 
-			WC_EComprocessing_Helper::logException( $exception );
+			WC_ecomprocessing_Helper::logException( $exception );
 
 			return false;
 		}
@@ -468,7 +470,7 @@ class WC_EComprocessing_Direct extends WC_EComprocessing_Method {
 	 * @throws \Genesis\Exceptions\InvalidMethod
 	 */
 	protected function prepareInitialGenesisRequest( $data ) {
-		$genesis = WC_EComprocessing_Genesis_Helper::getGatewayRequestByTxnType( $data['transaction_type'] );
+		$genesis = WC_ecomprocessing_Genesis_Helper::getGatewayRequestByTxnType( $data['transaction_type'] );
 
 		$genesis
 			->request()
@@ -509,7 +511,7 @@ class WC_EComprocessing_Direct extends WC_EComprocessing_Method {
 				->setShippingState( $data['shipping']['state'] )
 				->setShippingCountry( $data['shipping']['country'] );
 
-		$isRecurring = WC_EComprocessing_Subscription_Helper::isInitRecurring(
+		$isRecurring = WC_ecomprocessing_Subscription_Helper::isInitRecurring(
 			$data['transaction_type']
 		);
 
@@ -533,7 +535,7 @@ class WC_EComprocessing_Direct extends WC_EComprocessing_Method {
 	protected function process_init_subscription_payment( $order_id ) {
 		global $woocommerce;
 
-		$order = WC_EComprocessing_Order_Helper::getOrderById( $order_id );
+		$order = WC_ecomprocessing_Order_Helper::getOrderById( $order_id );
 
 		$data = $this->populateGateRequestData( $order, true );
 
@@ -549,12 +551,12 @@ class WC_EComprocessing_Direct extends WC_EComprocessing_Method {
 			// Create One-time token to prevent redirect abuse
 			$this->set_one_time_token( $order_id, static::generateTransactionId() );
 
-			$paymentSuccessful = WC_EComprocessing_Subscription_Helper::isInitGatewayResponseSuccessful( $response );
+			$paymentSuccessful = WC_ecomprocessing_Subscription_Helper::isInitGatewayResponseSuccessful( $response );
 
 			if ( $paymentSuccessful ) {
 				// Save the Checkout Id
-				WC_EComprocessing_Order_Helper::setOrderMetaData( $order_id, $this->getCheckoutTransactionIdMetaKey(), $response->unique_id );
-				WC_EComprocessing_Order_Helper::setOrderMetaData( $order_id, self::META_TRANSACTION_TYPE, $response->transaction_type );
+				WC_ecomprocessing_Order_Helper::setOrderMetaData( $order_id, $this->getCheckoutTransactionIdMetaKey(), $response->unique_id );
+				WC_ecomprocessing_Order_Helper::setOrderMetaData( $order_id, self::META_TRANSACTION_TYPE, $response->transaction_type );
 
 				if ( isset( $response->redirect_url ) ) {
 					return array(
@@ -585,7 +587,7 @@ class WC_EComprocessing_Direct extends WC_EComprocessing_Method {
 					);
 				}
 
-				WC_EComprocessing_Message_Helper::addErrorNotice( $error_message );
+				WC_ecomprocessing_Message_Helper::addErrorNotice( $error_message );
 
 				return false;
 			}
@@ -600,9 +602,9 @@ class WC_EComprocessing_Direct extends WC_EComprocessing_Method {
 				);
 			}
 
-			WC_EComprocessing_Message_Helper::addErrorNotice( $error_message );
+			WC_ecomprocessing_Message_Helper::addErrorNotice( $error_message );
 
-			WC_EComprocessing_Helper::logException( $exception );
+			WC_ecomprocessing_Helper::logException( $exception );
 
 			return false;
 		}
@@ -638,4 +640,4 @@ class WC_EComprocessing_Direct extends WC_EComprocessing_Method {
 	}
 }
 
-WC_EComprocessing_Direct::registerStaticActions();
+WC_ecomprocessing_Direct::registerStaticActions();

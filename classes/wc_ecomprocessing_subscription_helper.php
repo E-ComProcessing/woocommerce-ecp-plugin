@@ -24,11 +24,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * ecomprocessing Subscription Helper Class
  *
- * Class WC_EComprocessing_Subscription_Helper
+ * Class WC_ecomprocessing_Subscription_Helper
  *
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
-class WC_EComprocessing_Subscription_Helper {
+class WC_ecomprocessing_Subscription_Helper {
 
 	const META_INIT_RECURRING_ID             = '_init_recurring_id';
 	const META_RECURRING_TERMINAL_TOKEN      = '_recurring_terminal_token';
@@ -51,7 +51,7 @@ class WC_EComprocessing_Subscription_Helper {
 	 * @return boolean
 	 */
 	public static function hasOrderSubscriptions( $order_id ) {
-		if ( ! WC_EComprocessing_Order_Helper::isValidOrderId( $order_id ) ) {
+		if ( ! WC_ecomprocessing_Order_Helper::isValidOrderId( $order_id ) ) {
 			return false;
 		}
 
@@ -69,7 +69,7 @@ class WC_EComprocessing_Subscription_Helper {
 	 * @return bool
 	 */
 	public static function isWCSubscriptionsInstalled() {
-		return WC_EComprocessing_Helper::isWPPluginActive( self::WC_SUBSCRIPTIONS_PLUGIN_FILTER ) &&
+		return WC_ecomprocessing_Helper::isWPPluginActive( self::WC_SUBSCRIPTIONS_PLUGIN_FILTER ) &&
 			class_exists( self::WC_SUBSCRIPTIONS_ORDER_CLASS );
 	}
 
@@ -84,7 +84,7 @@ class WC_EComprocessing_Subscription_Helper {
 			return array();
 		}
 
-		if ( ! WC_EComprocessing_Order_Helper::isValidOrderId( $orderId ) ) {
+		if ( ! WC_ecomprocessing_Order_Helper::isValidOrderId( $orderId ) ) {
 			return array();
 		}
 
@@ -105,7 +105,7 @@ class WC_EComprocessing_Subscription_Helper {
 	 * @param \stdClass $response
 	 */
 	public static function saveInitRecurringResponseToOrderSubscriptions( $orderId, $response ) {
-		if ( ! WC_EComprocessing_Order_Helper::isValidOrderId( $orderId ) ) {
+		if ( ! WC_ecomprocessing_Order_Helper::isValidOrderId( $orderId ) ) {
 			return;
 		}
 
@@ -115,7 +115,7 @@ class WC_EComprocessing_Subscription_Helper {
 			update_post_meta( $subscription->get_id(), self::META_INIT_RECURRING_ID, $response->unique_id );
 		}
 
-		WC_EComprocessing_Order_Helper::setOrderMetaData( $orderId, self::META_INIT_RECURRING_ID, $response->unique_id );
+		WC_ecomprocessing_Order_Helper::setOrderMetaData( $orderId, self::META_INIT_RECURRING_ID, $response->unique_id );
 	}
 
 	/**
@@ -123,7 +123,7 @@ class WC_EComprocessing_Subscription_Helper {
 	 * @return mixed
 	 */
 	public static function getOrderInitRecurringIdMeta( $orderId ) {
-		return WC_EComprocessing_Order_Helper::getOrderMetaData( $orderId, self::META_INIT_RECURRING_ID );
+		return WC_ecomprocessing_Order_Helper::getOrderMetaData( $orderId, self::META_INIT_RECURRING_ID );
 	}
 
 	/**
@@ -188,7 +188,7 @@ class WC_EComprocessing_Subscription_Helper {
 	 * @param int $orderId
 	 */
 	public static function setInitRecurringOrderFinished( $orderId ) {
-		WC_EComprocessing_Order_Helper::setOrderMetaData( $orderId, self::META_INIT_RECURRING_FINISHED, true );
+		WC_ecomprocessing_Order_Helper::setOrderMetaData( $orderId, self::META_INIT_RECURRING_FINISHED, true );
 	}
 
 	/**
@@ -201,7 +201,7 @@ class WC_EComprocessing_Subscription_Helper {
 	 * @return bool
 	 */
 	public static function isInitRecurringOrderFinished( $orderId ) {
-		$orderFinished = WC_EComprocessing_Order_Helper::getOrderMetaData( $orderId, self::META_INIT_RECURRING_FINISHED );
+		$orderFinished = WC_ecomprocessing_Order_Helper::getOrderMetaData( $orderId, self::META_INIT_RECURRING_FINISHED );
 
 		return ! empty( $orderFinished );
 	}
@@ -239,7 +239,7 @@ class WC_EComprocessing_Subscription_Helper {
 	 * @return bool
 	 */
 	public static function isInitRecurringReconciliation( $reconcile ) {
-		$payment_object = WC_EComprocessing_Genesis_Helper::getReconcilePaymentTransaction( $reconcile );
+		$payment_object = WC_ecomprocessing_Genesis_Helper::getReconcilePaymentTransaction( $reconcile );
 
 		$payment_transaction = $payment_object;
 		if ( $payment_object instanceof \ArrayObject ) {
@@ -266,7 +266,7 @@ class WC_EComprocessing_Subscription_Helper {
 			update_post_meta( $subscription->get_id(), self::META_RECURRING_TERMINAL_TOKEN, $terminalToken );
 		}
 
-		WC_EComprocessing_Order_Helper::setOrderMetaData( $orderId, self::META_RECURRING_TERMINAL_TOKEN, $terminalToken );
+		WC_ecomprocessing_Order_Helper::setOrderMetaData( $orderId, self::META_RECURRING_TERMINAL_TOKEN, $terminalToken );
 
 		return count( $subscriptions ) > 0;
 	}
@@ -276,7 +276,7 @@ class WC_EComprocessing_Subscription_Helper {
 	 * @return mixed
 	 */
 	public static function getTerminalTokenMetaFromSubscriptionOrder( $orderId ) {
-		return WC_EComprocessing_Order_Helper::getOrderMetaData( $orderId, self::META_RECURRING_TERMINAL_TOKEN );
+		return WC_ecomprocessing_Order_Helper::getOrderMetaData( $orderId, self::META_RECURRING_TERMINAL_TOKEN );
 	}
 
 	/**
@@ -287,7 +287,7 @@ class WC_EComprocessing_Subscription_Helper {
 	 * @param string   $note   Description.
 	 */
 	public static function updateOrderSubscriptionsStatus( $order, $status, $note = '' ) {
-		if ( ! WC_EComprocessing_Order_Helper::isValidOrder( $order ) ) {
+		if ( ! WC_ecomprocessing_Order_Helper::isValidOrder( $order ) ) {
 			return;
 		}
 

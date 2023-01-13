@@ -23,7 +23,7 @@
 
 namespace Genesis\API\Request\Financial\Mobile;
 
-use Genesis\API\Constants\Transaction\Parameters\Mobile\GooglePay\PaymentTypes;
+use Genesis\API\Constants\Transaction\Parameters\Mobile\GooglePay\PaymentTypes as GooglePaySubtypes;
 use Genesis\API\Constants\Transaction\Types as TransactionType;
 use Genesis\API\Request\Base\Financial;
 use Genesis\API\Traits\Request\DocumentAttributes;
@@ -33,6 +33,7 @@ use Genesis\API\Traits\Request\Financial\Business\BusinessAttributes;
 use Genesis\API\Traits\Request\Financial\PaymentAttributes;
 use Genesis\API\Traits\Request\Mobile\GooglePayAttributes;
 use Genesis\API\Traits\RestrictedSetter;
+use Genesis\Exceptions\InvalidArgument;
 use Genesis\Utils\Common as CommonUtils;
 use Genesis\Utils\Currency;
 
@@ -47,6 +48,26 @@ class GooglePay extends Financial
 {
     use AddressInfoAttributes, PaymentAttributes, GooglePayAttributes, RestrictedSetter,
         BirthDateAttributes, BusinessAttributes, DocumentAttributes;
+
+    /**
+     * Used in Google token for signatures array
+     */
+    const GOOGLE_PAY_TOKEN_KEY_SIGNATURES = 'signatures';
+
+    /**
+     * Sets GooglePay token
+     *
+     * @param string $token
+     * @return $this
+     * @throws InvalidArgument
+     */
+    public function setJsonToken($token)
+    {
+        $tokenAttributes = CommonUtils::decodeJsonString($token, true);
+        $this->recursiveIterator($tokenAttributes);
+
+        return $this;
+    }
 
     /**
      * Returns the Request transaction type
@@ -67,7 +88,7 @@ class GooglePay extends Financial
     {
         $requiredFields = [
             'transaction_id',
-            'payment_type',
+            'payment_subtype',
             'amount',
             'currency',
             'token_signature',
@@ -79,10 +100,29 @@ class GooglePay extends Financial
         $this->requiredFields = CommonUtils::createArrayObject($requiredFields);
 
         $requiredFieldValues = [
-            'currency'     => Currency::getList(),
-            'payment_type' => PaymentTypes::getAllowedPaymentTypes(),
+            'currency'        => Currency::getList(),
+            'payment_subtype' => GooglePaySubtypes::getAllowedPaymentTypes(),
         ];
         $this->requiredFieldValues = CommonUtils::createArrayObject($requiredFieldValues);
+    }
+
+    /**
+     * Add document_id conditional validation if it is present
+     *
+     * @return void
+     * @throws InvalidArgument
+     * @throws \Genesis\Exceptions\ErrorParameter
+     * @throws \Genesis\Exceptions\InvalidClassMethod
+     */
+    protected function checkRequirements()
+    {
+        if ($this->document_id) {
+            $this->requiredFieldValuesConditional = CommonUtils::createArrayObject(
+                $this->getDocumentIdConditions()
+            );
+        }
+
+        parent::checkRequirements();
     }
 
     /**
@@ -97,7 +137,7 @@ class GooglePay extends Financial
             'amount'              => $this->transformAmount($this->amount, $this->currency),
             'currency'            => $this->currency,
             'remote_ip'           => $this->remote_ip,
-            'payment_type'        => $this->payment_type,
+            'payment_subtype'     => $this->payment_subtype,
             'payment_token'       => $this->getPaymentTokenStructure(),
             'customer_email'      => $this->customer_email,
             'customer_phone'      => $this->customer_phone,
@@ -107,5 +147,31 @@ class GooglePay extends Financial
             'business_attributes' => $this->getBusinessAttributesStructure(),
             'document_id'         => $this->document_id,
         ];
+    }
+
+    /**
+     * Recursively walk token attributes and set local properties
+     *
+     * @param array $tokenAttributes
+     * @return void
+     */
+    private function recursiveIterator($tokenAttributes)
+    {
+        foreach ($tokenAttributes as $attributeKey => $attributeValue) {
+            if ($attributeKey === self::GOOGLE_PAY_TOKEN_KEY_SIGNATURES) {
+                $this->setTokenSignatures($attributeValue);
+
+                continue;
+            }
+
+            $property = 'token_' . CommonUtils::pascalToSnakeCase($attributeKey);
+            if (property_exists($this, $property)) {
+                $this->{'set' . CommonUtils::snakeCaseToCamelCase($property)}($attributeValue);
+            }
+
+            if (CommonUtils::isValidArray($attributeValue)) {
+                $this->recursiveIterator($attributeValue);
+            }
+        }
     }
 }

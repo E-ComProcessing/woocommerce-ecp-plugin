@@ -24,9 +24,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 use \Genesis\API\Request\Financial\Alternatives\Klarna\Item as KlarnaItem;
 
 /**
- * Class wc_EComprocessing_order_helper
+ * Class wc_ecomprocessing_order_helper
  */
-class WC_EComprocessing_Order_Helper {
+class WC_ecomprocessing_Order_Helper {
 
 	/**
 	 * Retrieves meta data for a specific order and key
@@ -81,7 +81,7 @@ class WC_EComprocessing_Order_Helper {
 	 * Get payment gateway class by order data.
 	 *
 	 * @param int|WC_Order $order
-	 * @return WC_EComprocessing_Method|bool
+	 * @return WC_ecomprocessing_Method|bool
 	 */
 	public static function getPaymentMethodInstanceByOrder( $order ) {
 		return wc_get_payment_gateway_by_order( $order );
@@ -187,14 +187,14 @@ class WC_EComprocessing_Order_Helper {
 		if ( empty( $order_id ) ) {
 			$order_id = self::get_order_id(
 				$reconcile->unique_id,
-				WC_EComprocessing_Transactions_Tree::META_DATA_KEY_LIST
+				WC_ecomprocessing_Transactions_Tree::META_DATA_KEY_LIST
 			);
 		}
 
 		if ( empty( $order_id ) && isset( $reconcile->reference_transaction_unique_id ) ) {
 			$order_id = self::get_order_id(
 				$reconcile->reference_transaction_unique_id,
-				WC_EComprocessing_Transactions_Tree::META_DATA_KEY_LIST
+				WC_ecomprocessing_Transactions_Tree::META_DATA_KEY_LIST
 			);
 		}
 
@@ -244,16 +244,16 @@ class WC_EComprocessing_Order_Helper {
 	 */
 	public static function saveTrxListToOrder( WC_Order $order, array $trx_list_new ) {
 		$order_id          = static::getOrderProp( $order, 'id' );
-		$trx_list_existing = static::getOrderMetaData( $order_id, WC_EComprocessing_Transactions_Tree::META_DATA_KEY_LIST );
-		$trx_hierarchy     = static::getOrderMetaData( $order_id, WC_EComprocessing_Transactions_Tree::META_DATA_KEY_HIERARCHY );
+		$trx_list_existing = static::getOrderMetaData( $order_id, WC_ecomprocessing_Transactions_Tree::META_DATA_KEY_LIST );
+		$trx_hierarchy     = static::getOrderMetaData( $order_id, WC_ecomprocessing_Transactions_Tree::META_DATA_KEY_HIERARCHY );
 
 		if ( empty( $trx_hierarchy ) ) {
 			$trx_hierarchy = array();
 		}
 
-		$trx_tree = new WC_EComprocessing_Transactions_Tree( array(), $trx_list_new, $trx_hierarchy );
+		$trx_tree = new WC_ecomprocessing_Transactions_Tree( array(), $trx_list_new, $trx_hierarchy );
 		if ( is_array( $trx_list_existing ) ) {
-			$trx_tree = new WC_EComprocessing_Transactions_Tree( $trx_list_existing, $trx_list_new, $trx_hierarchy );
+			$trx_tree = new WC_ecomprocessing_Transactions_Tree( $trx_list_existing, $trx_list_new, $trx_hierarchy );
 		}
 
 		static::saveTrxTree( $order_id, $trx_tree );
@@ -261,18 +261,18 @@ class WC_EComprocessing_Order_Helper {
 
 	/**
 	 * @param int                               $order_id
-	 * @param WC_EComprocessing_Transactions_Tree $trx_tree
+	 * @param WC_ecomprocessing_Transactions_Tree $trx_tree
 	 */
-	public static function saveTrxTree( $order_id, WC_EComprocessing_Transactions_Tree $trx_tree ) {
+	public static function saveTrxTree( $order_id, WC_ecomprocessing_Transactions_Tree $trx_tree ) {
 		static::setOrderMetaData(
 			$order_id,
-			WC_EComprocessing_Transactions_Tree::META_DATA_KEY_LIST,
+			WC_ecomprocessing_Transactions_Tree::META_DATA_KEY_LIST,
 			$trx_tree->trx_list
 		);
 
 		static::setOrderMetaData(
 			$order_id,
-			WC_EComprocessing_Transactions_Tree::META_DATA_KEY_HIERARCHY,
+			WC_ecomprocessing_Transactions_Tree::META_DATA_KEY_HIERARCHY,
 			$trx_tree->trx_hierarchy
 		);
 	}
@@ -282,11 +282,11 @@ class WC_EComprocessing_Order_Helper {
 	 * @param stdClass $response_obj
 	 */
 	public static function saveInitialTrxToOrder( $order_id, $response_obj ) {
-		$trx = new WC_EComprocessing_Transaction( $response_obj );
+		$trx = new WC_ecomprocessing_Transaction( $response_obj );
 
 		static::setOrderMetaData(
 			$order_id,
-			WC_EComprocessing_Transactions_Tree::META_DATA_KEY_LIST,
+			WC_ecomprocessing_Transactions_Tree::META_DATA_KEY_LIST,
 			[ $trx ]
 		);
 	}
@@ -384,7 +384,7 @@ class WC_EComprocessing_Order_Helper {
 		if ( $taxes ) {
 			$items->addItem(
 				new KlarnaItem(
-					WC_EComprocessing_Method::getTranslatedText( 'Taxes' ),
+					WC_ecomprocessing_Method::getTranslatedText( 'Taxes' ),
 					KlarnaItem::ITEM_TYPE_SURCHARGE,
 					1,
 					$taxes
@@ -396,7 +396,7 @@ class WC_EComprocessing_Order_Helper {
 		if ( $discount ) {
 			$items->addItem(
 				new KlarnaItem(
-					WC_EComprocessing_Method::getTranslatedText( 'Discount' ),
+					WC_ecomprocessing_Method::getTranslatedText( 'Discount' ),
 					KlarnaItem::ITEM_TYPE_DISCOUNT,
 					1,
 					-$discount
@@ -408,7 +408,7 @@ class WC_EComprocessing_Order_Helper {
 		if ( $total_shipping_cost ) {
 			$items->addItem(
 				new KlarnaItem(
-					WC_EComprocessing_Method::getTranslatedText( 'Shipping Costs' ),
+					WC_ecomprocessing_Method::getTranslatedText( 'Shipping Costs' ),
 					KlarnaItem::ITEM_TYPE_SHIPPING_FEE,
 					1,
 					$total_shipping_cost
