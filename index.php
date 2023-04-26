@@ -6,12 +6,12 @@
  * Text Domain: woocommerce-ecomprocessing
  * Author: E-Comprocessing
  * Author URI: https://e-comprocessing.com/
- * Version: 1.12.7
+ * Version: 1.13.3
  * Requires at least: 4.0
- * Tested up to: 6.0.1
+ * Tested up to: 6.2
  * WC requires at least: 3.0.0
- * WC tested up to: 6.8.2
- * WCS tested up to: 4.0.1
+ * WC tested up to: 7.1.1
+ * WCS tested up to: 4.6.0
  * License: GPL-2.0
  * License URI: http://opensource.org/licenses/gpl-2.0.php
 */
@@ -43,8 +43,6 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
 
 			include dirname( __FILE__ ) . '/includes/wc_ecomprocessing_checkout.php';
 
-			include dirname( __FILE__ ) . '/includes/wc_ecomprocessing_direct.php';
-
 			/**
 			 * Add the ecomprocessing Gateway to WooCommerce's
 			 * list of installed gateways
@@ -56,7 +54,6 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
 			if ( ! function_exists( 'woocommerce_add_ecomprocessing_gateway' ) ) {
 				function woocommerce_add_ecomprocessing_gateway( $methods ) {
 					array_push( $methods, 'WC_ecomprocessing_Checkout' );
-					array_push( $methods, 'WC_ecomprocessing_Direct' );
 
 					return $methods;
 				}

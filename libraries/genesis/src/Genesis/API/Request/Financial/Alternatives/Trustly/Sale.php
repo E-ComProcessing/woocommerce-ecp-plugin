@@ -1,5 +1,5 @@
 <?php
-/*
+/**
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -18,6 +18,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  *
+ * @author      emerchantpay
+ * @copyright   Copyright (C) 2015-2023 emerchantpay Ltd.
  * @license     http://opensource.org/licenses/MIT The MIT License
  */
 
@@ -26,6 +28,7 @@ namespace Genesis\API\Request\Financial\Alternatives\Trustly;
 use Genesis\API\Constants\Transaction\Parameters\IFrameTargets;
 use Genesis\API\Traits\Request\Financial\BirthDateAttributes;
 use Genesis\API\Traits\Request\Financial\AsyncAttributes;
+use Genesis\API\Traits\Request\Financial\Business\BusinessAttributes;
 use Genesis\API\Traits\Request\Financial\PaymentAttributes;
 use Genesis\API\Traits\Request\AddressInfoAttributes;
 use Genesis\API\Traits\RestrictedSetter;
@@ -44,7 +47,8 @@ use Genesis\Exceptions\InvalidArgument;
  */
 class Sale extends \Genesis\API\Request\Base\Financial
 {
-    use AsyncAttributes, PaymentAttributes, AddressInfoAttributes, RestrictedSetter, BirthDateAttributes;
+    use AsyncAttributes, PaymentAttributes, AddressInfoAttributes, RestrictedSetter, BirthDateAttributes,
+        BusinessAttributes;
 
     /**
      * URL target for successful payment in Trustly iFrame.
@@ -140,7 +144,8 @@ class Sale extends \Genesis\API\Request\Base\Financial
                 'user_id'                   => $this->user_id,
                 'birth_date'                => $this->getBirthDate(),
                 'billing_address'           => $this->getBillingAddressParamsStructure(),
-                'shipping_address'          => $this->getShippingAddressParamsStructure()
+                'shipping_address'          => $this->getShippingAddressParamsStructure(),
+                'business_attributes'       => $this->getBusinessAttributesStructure()
             ]
         );
     }

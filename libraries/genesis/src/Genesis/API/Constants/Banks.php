@@ -1,5 +1,5 @@
 <?php
-/*
+/**
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -18,6 +18,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  *
+ * @author      emerchantpay
+ * @copyright   Copyright (C) 2015-2023 emerchantpay Ltd.
  * @license     http://opensource.org/licenses/MIT The MIT License
  */
 
@@ -360,6 +362,11 @@ class Banks
     const BN = 'BN';
 
     /**
+     * Bancontact
+     */
+    const BCT = 'BCT';
+
+    /**
      * PSE
      */
     const PS = 'PS';
@@ -698,7 +705,7 @@ class Banks
     /**
      * Kuwait Finance House
      */
-    const FPX_KFN = 'FPX_KFN';
+    const FPX_KFH = 'FPX_KFH';
 
     /**
      * May Bank
@@ -979,6 +986,26 @@ class Banks
      * VTC-Pay Vietinbank
      */
     const VTCP_VIETINBANK = 'VTCP_VIETINBANK';
+
+    /**
+     * DBS
+     */
+    const DBS = 'ENETS-D_DBS';
+
+    /**
+     * UOB
+     */
+    const UOB = 'ENETS-D_UOB';
+
+    /**
+     * OCBC
+     */
+    const OCBC = 'ENETS-D_OCBC';
+
+    /**
+     * SCB
+     */
+    const SCB = 'ENETS-D_SCB';
 
     /**
      * Retrieve list of all Bank Codes

@@ -1,5 +1,5 @@
 <?php
-/*
+/**
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -18,6 +18,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  *
+ * @author      emerchantpay
+ * @copyright   Copyright (C) 2015-2023 emerchantpay Ltd.
  * @license     http://opensource.org/licenses/MIT The MIT License
  */
 
@@ -58,7 +60,7 @@ class BankCodeParameters
             Banks::SP
         ],
         'EUR' => [
-            Banks::PF
+            Banks::PF, Banks::BCT
         ],
         'THB' => [
             Banks::SCB_THB, Banks::KTB_THB, Banks::BAY_THB, Banks::UOB_THB, Banks::KKB_THB,
@@ -69,13 +71,10 @@ class BankCodeParameters
             Banks::SN, Banks::IT, Banks::BR, Banks::BB, Banks::WP, Banks::BN, Banks::PS, Banks::BO
         ],
         'MYR' => [
-            Banks::CASH_711, Banks::FPX_ABB, Banks::AFFIN_EPG, Banks::FPX_ABMB, Banks::FPX_AMB,
-            Banks::AMB_W2W, Banks::FPX_BIMB, Banks::BANKISLAM, Banks::FPX_BMMB, Banks::FPX_BKRM,
-            Banks::FPX_BSN, Banks::CIMB_MYR, Banks::FPX_CIMBCLICKS, Banks::CIMB_CLICKS, Banks::FPX,
-            Banks::FPX_HLB, Banks::HLB_ONL, Banks::HLE_MYR, Banks::JOMPAY_PHP, Banks::FPX_KFN,
-            Banks::MAY_MYR, Banks::FPX_MB2U, Banks::MB2U, Banks::FPX_OCBC, Banks::FPX_PBB,
-            Banks::PUBLICKBANK, Banks::PBE_MYR, Banks::RHB_MYR, Banks::FPX_RHB, Banks::RHB_ONL,
-            Banks::FPX_SCB, Banks::FPX_UOB
+            Banks::FPX_ABB, Banks::FPX_ABMB, Banks::FPX_AMB, Banks::FPX_BIMB, Banks::FPX_BMMB,
+            Banks::FPX_BKRM, Banks::FPX_BSN, Banks::FPX_CIMBCLICKS, Banks::FPX_HLB, Banks::FPX_KFH,
+            Banks::FPX_MB2U, Banks::FPX_OCBC, Banks::FPX_PBB, Banks::FPX_RHB, Banks::FPX_SCB,
+            Banks::FPX_UOB
         ],
         'PEN' => [
             Banks::BC, Banks::IB, Banks::EF, Banks::BP
@@ -104,7 +103,7 @@ class BankCodeParameters
             Banks::DRAGONPAY
         ],
         'SGD' => [
-            Banks::ENETS_D, Banks::SINGPOST_PHP
+            Banks::DBS, Banks::UOB, Banks::OCBC, Banks::SCB
         ],
         'UYU' => [
             Banks::AI

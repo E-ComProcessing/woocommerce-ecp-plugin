@@ -17,6 +17,8 @@
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
  */
 
+use Genesis\API\Constants\Transaction\Parameters\ScaExemptions;
+use Genesis\API\Constants\Transaction\Parameters\Threeds\V2\Control\ChallengeIndicators;
 use Genesis\API\Constants\Transaction\Types;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -98,6 +100,10 @@ abstract class WC_ecomprocessing_Method extends WC_Payment_Gateway {
 	const SETTING_KEY_BUSINESS_RETURN_DATE                = 'business_return_date';
 	const SETTING_KEY_REDIRECT_FAILURE                    = 'redirect_failure';
 	const SETTING_KEY_REDIRECT_CANCEL                     = 'redirect_cancel';
+	const SETTING_KEY_THREEDS_ALLOWED                     = 'threeds_allowed';
+	const SETTING_KEY_THREEDS_CHALLENGE_INDICATOR         = 'threeds_challenge_indicator';
+	const SETTING_KEY_SCA_EXEMPTION                       = 'sca_exemption';
+	const SETTING_KEY_SCA_EXEMPTION_AMOUNT                = 'sca_exemption_amount';
 
 	/**
 	 * Order cancel/failure settings
@@ -151,6 +157,7 @@ abstract class WC_ecomprocessing_Method extends WC_Payment_Gateway {
 		'WC_ecomprocessing_Order_Helper'        => 'wc_ecomprocessing_order_helper',
 		'WC_ecomprocessing_Subscription_Helper' => 'wc_ecomprocessing_subscription_helper',
 		'WC_ecomprocessing_Message_Helper'      => 'wc_ecomprocessing_message_helper',
+		'WC_Ecomprocessing_Threeds_Helper'      => 'class-wc-ecomprocessing-threeds-helper',
 		'WC_ecomprocessing_Transaction'         => 'wc_ecomprocessing_transaction',
 		'WC_ecomprocessing_Transaction_Tree'    => 'wc_ecomprocessing_transactions_tree',
 	);
@@ -209,7 +216,6 @@ abstract class WC_ecomprocessing_Method extends WC_Payment_Gateway {
 	/**
 	 * Holds the Meta Key used to extract the checkout Transaction
 	 *   - Checkout Method -> WPF Unique Id
-	 *   - Direct Method   -> Transaction Unique Id
 	 *
 	 * @return string
 	 */
@@ -522,10 +528,6 @@ abstract class WC_ecomprocessing_Method extends WC_Payment_Gateway {
 
 		if ( WC_ecomprocessing_Checkout::get_method_code() === self::get_method_code() ) {
 			$key = WC_ecomprocessing_Checkout::SETTING_KEY_TRANSACTION_TYPES;
-		}
-
-		if ( WC_ecomprocessing_Direct::get_method_code() === self::get_method_code() ) {
-			$key = WC_ecomprocessing_Direct::META_TRANSACTION_TYPE;
 		}
 
 		return $key;
@@ -1366,8 +1368,6 @@ abstract class WC_ecomprocessing_Method extends WC_Payment_Gateway {
 	 *  - SSL
 	 *  - etc
 	 *
-	 * Will be extended in the Direct Method
-	 *
 	 * @return bool
 	 */
 	protected function is_applicable() {
@@ -1957,17 +1957,6 @@ abstract class WC_ecomprocessing_Method extends WC_Payment_Gateway {
 					$total_refund_amount = $total_refunded_amount + $payment_transactions->amount;
 					$fully_refunded = ( (float) $total_order_amount === (float) $total_refund_amount ) ?: false;
 				}
-
-				break;
-			case WC_ecomprocessing_Direct::get_method_code():
-				$total_refunded_amount = WC_ecomprocessing_Transactions_Tree::get_total_amount_without_unique_id(
-					$payment_transactions->unique_id,
-					WC_ecomprocessing_Transactions_Tree::getTransactionsListFromOrder( $order ),
-					\Genesis\API\Constants\Transaction\Types::REFUND
-				);
-
-				$total_refund_amount = $total_refunded_amount + $payment_transactions->amount;
-				$fully_refunded      = ( (float) $total_order_amount === (float) $total_refund_amount) ?: false;
 
 				break;
 		}
@@ -2618,7 +2607,7 @@ abstract class WC_ecomprocessing_Method extends WC_Payment_Gateway {
 			$result .= '//' . $info['host'];
 		}
 
-		if ( $info['port'] ) {
+		if ( array_key_exists( 'port', $info ) && ! empty( $info['host'] ) ) {
 			$result .= ':' . $info['port'];
 		}
 
@@ -2739,7 +2728,7 @@ abstract class WC_ecomprocessing_Method extends WC_Payment_Gateway {
 
 	/**
 	* Get the code of the current used payment method
-	* Checkout / Direct
+	* Checkout
 	*
 	* @return string|null
 	*/
@@ -3378,6 +3367,117 @@ abstract class WC_ecomprocessing_Method extends WC_Payment_Gateway {
 			self::SETTING_VALUE_ORDER    => 'Order page (default)',
 			self::SETTING_VALUE_CHECKOUT => 'Checkout page',
 		);
+	}
+
+	/**
+	 * Control the 3DSv2 optional parameters handling
+	 *
+	 * @return bool
+	 */
+	protected function is_3dsv2_available() {
+		return $this->get_option( self::SETTING_KEY_THREEDS_ALLOWED ) === self::SETTING_VALUE_YES;
+	}
+
+	/**
+	 * 3DSv2 Attributes form
+	 *
+	 * @return array
+	 */
+	public function build_3dsv2_attributes_form_fields() {
+
+		return array(
+			'threeds_attributes'                          => array(
+				'type'  => 'title',
+				'title' => static::getTranslatedText( '3DSv2 options' ),
+			),
+			self::SETTING_KEY_THREEDS_ALLOWED             => array(
+				'type'        => 'checkbox',
+				'title'       => static::getTranslatedText( 'Enable/Disable' ),
+				'label'       => static::getTranslatedText( 'Enable 3DSv2' ),
+				'default'     => self::SETTING_VALUE_YES,
+				'description' => static::getTranslatedText( 'Enable handling of 3DSv2 optional parameters' ),
+			),
+			self::SETTING_KEY_THREEDS_CHALLENGE_INDICATOR => array(
+				'type'        => 'select',
+				'title'       => static::getTranslatedText( '3DSv2 Challenge option' ),
+				'options'     => $this->get_allowed_challenge_indicators(),
+				'label'       => static::getTranslatedText( 'Enable challenge indicator' ),
+				'description' => static::getTranslatedText(
+					'The value has weight and might impact the decision whether' .
+					'a challenge will be required for the transaction or not.' .
+					' If not provided, it will be interpreted as no_preference.'
+				),
+				'desc_tip'    => true,
+			),
+		);
+	}
+
+	/**
+	 * Helper array used for Challenge Indicator available opotions
+	 *
+	 * @return array
+	 */
+	protected function get_allowed_challenge_indicators() {
+		return array(
+			ChallengeIndicators::NO_PREFERENCE          => 'No preference',
+			ChallengeIndicators::NO_CHALLENGE_REQUESTED => 'No challenge requested',
+			ChallengeIndicators::PREFERENCE             => 'Preference',
+			ChallengeIndicators::MANDATE                => 'Mandate',
+		);
+	}
+
+	/**
+	 * @return array
+	 */
+	protected function build_sca_exemption_options_form_fields() {
+		return array(
+			'sca_exemption_attributes'             => array(
+				'type'        => 'title',
+				'title'       => static::getTranslatedText( 'SCA Exemption options' ),
+			),
+			self::SETTING_KEY_SCA_EXEMPTION        => array(
+				'type'        => 'select',
+				'title'       => static::getTranslatedText( 'SCA Exemption option' ),
+				'options'     => $this->get_sca_exemption_values(),
+				'label'       => static::getTranslatedText( 'SCA Exemption' ),
+				'description' => static::getTranslatedText( 'Exemption for the Strong Customer Authentication.' ),
+				'default'     => ScaExemptions::EXEMPTION_LOW_VALUE,
+				'desc_tip'    => true,
+			),
+			self::SETTING_KEY_SCA_EXEMPTION_AMOUNT => array(
+				'type'        => 'text',
+				'title'       => static::getTranslatedText( 'SCA Exemption amount option' ),
+				'label'       => static::getTranslatedText( 'SCA Exemption Amount' ),
+				'description' => static::getTranslatedText( 'Exemption Amount determinate if the SCA Exemption should be included in the request to the Gateway.' ),
+				'default'     => 100,
+				'desc_tip'    => true,
+			),
+		);
+	}
+
+	/**
+	 * @return array
+	 */
+	protected function get_sca_exemption_values() {
+		return array(
+			ScaExemptions::EXEMPTION_LOW_RISK  => static::getTranslatedText( 'Low risk' ),
+			ScaExemptions::EXEMPTION_LOW_VALUE => static::getTranslatedText( 'Low value' ),
+		);
+	}
+
+	/**
+	 * Add SCA Exemption parameter to Genesis Request
+	 *
+	 * @param void
+	 */
+	protected function add_sca_exemption_parameters( $genesis ) {
+		$wpf_amount          = (float) $genesis->request()->getAmount();
+		$sca_exemption       = $this->get_option( self::SETTING_KEY_SCA_EXEMPTION );
+		$sca_exemption_value = (float) $this->get_option( self::SETTING_KEY_SCA_EXEMPTION_AMOUNT );
+
+		if ( $wpf_amount <= $sca_exemption_value ) {
+			$genesis->request()->setScaExemption( $sca_exemption );
+		}
 	}
 }
 
