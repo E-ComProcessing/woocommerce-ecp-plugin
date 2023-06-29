@@ -18,17 +18,17 @@ msgstr ""
 "X-Poedit-SearchPath-0: .\n"
 "X-Poedit-SearchPathExcluded-0: *.js\n"
 
-msgid "E-Comprocessing"
+msgid "ecomprocessing"
 msgstr "ecomprocessing"
 
-msgid "E-Comprocessing's Gateway works by sending your client, to our secure (PCI-DSS certified) server."
-msgstr "E-Comprocessing's Gateway works by sending your client, to our secure (PCI-DSS certified) server."
+msgid "ecomprocessing's Gateway works by sending your client, to our secure (PCI-DSS certified) server."
+msgstr "ecomprocessing's Gateway works by sending your client, to our secure (PCI-DSS certified) server."
 
 msgid "Enable/Disable"
 msgstr "Enable/Disable"
 
-msgid "Enable E-Comprocessing Checkout"
-msgstr "Enable E-Comprocessing Checkout"
+msgid "Enable eMerchangPay Checkout"
+msgstr "Enable eMerchangPay Checkout"
 
 msgid "Title:"
 msgstr "Title:"
@@ -42,8 +42,8 @@ msgstr "Description:"
 msgid "Text describing this payment method to the customer, during checkout."
 msgstr "Text describing this payment method to the customer, during checkout."
 
-msgid "Pay safely through E-Comprocessing's Secure Gateway."
-msgstr "Pay safely through E-Comprocessing's Secure Gateway."
+msgid "Pay safely through ecomprocessing's Secure Gateway."
+msgstr "Pay safely through ecomprocessing's Secure Gateway."
 
 msgid "Transaction Type"
 msgstr "Transaction Type"

@@ -1,0 +1,27 @@
+div.ecp-threeds-modal {
+	display: none;
+	position: fixed;
+	z-index: 99;
+	padding-top: 100px;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	overflow: auto;
+}
+
+iframe.ecp-threeds-iframe {
+	box-shadow: none;
+	outline: none;
+	border: none;
+	background-color: transparent;
+	opacity: 1;
+	width: 100%;
+	height: 100%;
+	overflow: visible;
+}
+
+div.ecp-payment-notice {
+	color: navy;
+	font-weight: 600;
+}

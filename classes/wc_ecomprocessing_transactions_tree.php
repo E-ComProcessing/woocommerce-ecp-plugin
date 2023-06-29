@@ -30,8 +30,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WC_ecomprocessing_Transactions_Tree {
 
-	const META_DATA_KEY_HIERARCHY = 'ecp_trx_hierarchy';
-	const META_DATA_KEY_LIST      = 'ecp_trx_list';
+	const META_DATA_KEY_HIERARCHY = 'emp_trx_hierarchy';
+	const META_DATA_KEY_LIST      = 'emp_trx_list';
 
 	/**
 	 * @var array $trx_hierarchy child_unique_id => parent_unique_id

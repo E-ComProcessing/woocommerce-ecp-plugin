@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<td colspan="3">
 		<section class="box bootstrap">
 			<h3 class="text-left">
-				<img src="<?php echo plugin_dir_url( realpath( dirname( __FILE__ ) . '/../../' ) ) . 'assets/images/logo.png'; ?>" alt="eMp" class="emp-logo" />
+				<img src="<?php echo plugin_dir_url( realpath( dirname( __FILE__ ) . '/../../' ) ) . 'assets/images/logo.png'; ?>" alt="eMp" class="ecp-logo" />
 				<span><?php echo $payment_method::getTranslatedText( 'E-Comprocessing Transactions' ); ?></span>
 			</h3>
 

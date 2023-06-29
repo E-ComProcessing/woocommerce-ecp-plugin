@@ -1008,6 +1008,11 @@ class Banks
     const SCB = 'ENETS-D_SCB';
 
     /**
+     * BL
+     */
+    const BLK = 'BLK';
+
+    /**
      * Retrieve list of all Bank Codes
      *
      * @return array
