@@ -25,6 +25,7 @@
 
 namespace Genesis\API\Traits;
 
+use Genesis\Exceptions\ErrorParameter;
 use Genesis\Exceptions\InvalidArgument;
 use Genesis\Utils\Common;
 
@@ -43,7 +44,7 @@ trait RestrictedSetter
      * @return $this
      * @throws InvalidArgument
      */
-    public function allowedOptionsSetter($field, $allowed, $value, $errorMessage)
+    protected function allowedOptionsSetter($field, $allowed, $value, $errorMessage)
     {
         if (!in_array($value, $allowed)) {
             throw new InvalidArgument($errorMessage . ' Allowed values are ' . implode(', ', $allowed));
@@ -105,6 +106,36 @@ trait RestrictedSetter
         }
 
         $this->$field = $date;
+
+        return $this;
+    }
+
+    /**
+     * @param string $field
+     * @param $value
+     * @throws InvalidArgument
+     * @return $this
+     */
+    protected function parseAmount($field, $value)
+    {
+        if (is_null($value)) {
+            $this->{$field} = null;
+            return $this;
+        }
+
+        $value = trim($value);
+
+        if (!\Genesis\Utils\Common::isValidAmount($value)) {
+            throw new InvalidArgument(
+                sprintf(
+                    'Unsupported value %s for parameter %s. ' .
+                    'Please check the documentation for more information.',
+                    $value,
+                    $field
+                )
+            );
+        }
+        $this->{$field} = $value;
 
         return $this;
     }

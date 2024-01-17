@@ -27,12 +27,17 @@ namespace Genesis\API\Request\Financial\OnlineBankingPayments\OnlineBanking;
 
 use Genesis\API\Constants\BankAccountTypes;
 use Genesis\API\Constants\Transaction\Parameters\OnlineBanking\PayoutBankParameters;
+use Genesis\API\Constants\Transaction\Parameters\OnlineBanking\PayoutPaymentTypesParameters;
+use Genesis\API\Constants\Transaction\Parameters\OnlineBanking\PayoutBankCodeParameters;
 use Genesis\API\Traits\Request\AddressInfoAttributes;
 use Genesis\API\Traits\Request\Financial\AsyncAttributes;
 use Genesis\API\Traits\Request\Financial\BirthDateAttributes;
 use Genesis\API\Traits\Request\Financial\NotificationAttributes;
 use Genesis\API\Traits\Request\Financial\PaymentAttributes;
-use Genesis\API\Traits\RestrictedSetter;
+use Genesis\API\Traits\Request\Financial\OnlineBankingPayments\CustomerAttributes;
+use Genesis\Exceptions\ErrorParameter;
+use Genesis\Exceptions\InvalidArgument;
+use Genesis\Exceptions\InvalidClassMethod;
 use Genesis\Utils\Common;
 
 /**
@@ -48,13 +53,14 @@ use Genesis\Utils\Common;
  * @method Payout setBankCode($value) Set Customer’s bank code
  * @method Payout setBankBranch($value) Set Customer’s bank branch
  * @method Payout setBankProvince($value) Set Name of the province that the bank is located
+ * @method string getPaymentType() Get Payment type
  *
  * @SuppressWarnings(PHPMD.LongVariable)
  */
 class Payout extends \Genesis\API\Request\Base\Financial
 {
-    use RestrictedSetter, AddressInfoAttributes, AsyncAttributes, PaymentAttributes,
-        NotificationAttributes, RestrictedSetter, BirthDateAttributes;
+    use AddressInfoAttributes, AsyncAttributes, PaymentAttributes,
+        NotificationAttributes, BirthDateAttributes, CustomerAttributes;
 
     const ID_CARD_NUMBER_MAX_LENGTH          = 30;
     const PAYER_BANK_PHONE_NUMBER_MAX_LENGTH = 11;
@@ -162,6 +168,14 @@ class Payout extends \Genesis\API\Request\Base\Financial
      * @var string $bank_account_verification_digit
      */
     protected $bank_account_verification_digit;
+
+    /**
+     * Bank payout subtype.
+     * Available values: bank_to_bank, pix, bsb, pay_id, bank_to_bank_b2b, pix_b2b
+     *
+     * @var string protected $payment_type;
+     */
+    protected $payment_type;
 
     protected function getTransactionType()
     {
@@ -271,6 +285,29 @@ class Payout extends \Genesis\API\Request\Base\Financial
     }
 
     /**
+     * The payment type
+     *
+     * @param $value
+     * @return Payout
+     * @throws \Genesis\Exceptions\InvalidArgument
+     */
+    public function setPaymentType($value)
+    {
+        if (empty($value)) {
+            $this->payment_type = null;
+
+            return $this;
+        }
+
+        return $this->allowedOptionsSetter(
+            'payment_type',
+            PayoutPaymentTypesParameters::getAll(),
+            $value,
+            'Invalid payment_type.'
+        );
+    }
+
+    /**
      * Set the required fields
      *
      * @return void
@@ -362,30 +399,73 @@ class Payout extends \Genesis\API\Request\Base\Financial
      */
     protected function getPaymentTransactionStructure()
     {
-        return [
-            'amount'                          => $this->transformAmount($this->amount, $this->currency),
-            'currency'                        => $this->currency,
-            'customer_email'                  => $this->customer_email,
-            'customer_phone'                  => $this->customer_phone,
-            'notification_url'                => $this->notification_url,
-            'return_success_url'              => $this->return_success_url,
-            'return_failure_url'              => $this->return_failure_url,
-            'bank_code'                       => $this->bank_code,
-            'bank_name'                       => $this->bank_name,
-            'bank_branch'                     => $this->bank_branch,
-            'bank_account_name'               => $this->bank_account_name,
-            'bank_account_number'             => $this->bank_account_number,
-            'bank_province'                   => $this->bank_province,
-            'id_card_number'                  => $this->id_card_number,
-            'payer_bank_account_number'       => $this->payer_bank_phone_number,
-            'bank_account_type'               => $this->bank_account_type,
-            'bank_account_verification_digit' => $this->bank_account_verification_digit,
-            'document_type'                   => $this->document_type,
-            'account_id'                      => $this->account_id,
-            'user_id'                         => $this->user_id,
-            'birth_date'                      => $this->getBirthDate(),
-            'billing_address'                 => $this->getBillingAddressParamsStructure(),
-            'shipping_address'                => $this->getShippingAddressParamsStructure()
+        return array_merge(
+            [
+                'amount'                          => $this->transformAmount($this->amount, $this->currency),
+                'currency'                        => $this->currency,
+                'customer_email'                  => $this->customer_email,
+                'customer_phone'                  => $this->customer_phone,
+                'notification_url'                => $this->notification_url,
+                'return_success_url'              => $this->return_success_url,
+                'return_failure_url'              => $this->return_failure_url,
+                'bank_code'                       => $this->bank_code,
+                'bank_name'                       => $this->bank_name,
+                'bank_branch'                     => $this->bank_branch,
+                'bank_account_name'               => $this->bank_account_name,
+                'bank_account_number'             => $this->bank_account_number,
+                'bank_province'                   => $this->bank_province,
+                'id_card_number'                  => $this->id_card_number,
+                'payer_bank_account_number'       => $this->payer_bank_phone_number,
+                'bank_account_type'               => $this->bank_account_type,
+                'bank_account_verification_digit' => $this->bank_account_verification_digit,
+                'document_type'                   => $this->document_type,
+                'account_id'                      => $this->account_id,
+                'user_id'                         => $this->user_id,
+                'birth_date'                      => $this->getBirthDate(),
+                'payment_type'                    => $this->payment_type,
+                'billing_address'                 => $this->getBillingAddressParamsStructure(),
+                'shipping_address'                => $this->getShippingAddressParamsStructure()
+            ],
+            $this->getCustomerParamsStructure()
+        );
+    }
+
+    /**
+     * Perform field validation
+     *
+     * @return void
+     * @throws ErrorParameter
+     * @throws InvalidArgument
+     * @throws InvalidClassMethod
+     */
+    protected function checkRequirements()
+    {
+        $this->validateBRLCurrency();
+        parent::checkRequirements();
+    }
+
+    /**
+     * If the currency is BRL at least one of the parameters bank_code or bank_name should be set
+     * @return void
+     * @throws ErrorParameter
+     */
+    protected function validateBRLCurrency()
+    {
+        if ($this->currency != 'BRL') {
+            return;
+        }
+
+        $requiredFieldsGroups = [
+            'currency' => ['bank_code', 'bank_name'],
         ];
+        $this->requiredFieldsGroups = Common::createArrayObject($requiredFieldsGroups);
+
+        // Allow empty bank_name with non-empty bank_code
+        if (!empty($this->bank_code)) {
+            $requiredFieldValuesConditional                      = (array)$this->requiredFieldValuesConditional;
+            $requiredFieldValuesConditional['currency']['BRL'][] = ['bank_code' => $this->bank_code];
+
+            $this->requiredFieldValuesConditional = Common::createArrayObject($requiredFieldValuesConditional);
+        }
     }
 }

@@ -33,8 +33,8 @@ use Genesis\API\Traits\Request\MotoAttributes;
 use Genesis\API\Traits\Request\AddressInfoAttributes;
 use Genesis\API\Traits\Request\RiskAttributes;
 use Genesis\API\Traits\Request\Financial\DescriptorAttributes;
+use Genesis\API\Traits\Request\Financial\FundingAttributes;
 use Genesis\API\Traits\Request\Financial\TravelData\TravelDataAttributes;
-use Genesis\API\Traits\RestrictedSetter;
 use Genesis\Utils\Common as CommonUtils;
 
 /**
@@ -47,8 +47,8 @@ use Genesis\Utils\Common as CommonUtils;
 class InitRecurringSale extends \Genesis\API\Request\Base\Financial\Cards\CreditCard
 {
     use MotoAttributes, AddressInfoAttributes, RiskAttributes, DescriptorAttributes,
-        TravelDataAttributes, FxRateAttributes, BusinessAttributes, RestrictedSetter,
-        ManagedRecurringAttributes, RecurringCategoryAttributes;
+        TravelDataAttributes, FxRateAttributes, BusinessAttributes,
+        ManagedRecurringAttributes, RecurringCategoryAttributes, FundingAttributes;
 
     /**
      * Returns the Request transaction type
@@ -111,7 +111,8 @@ class InitRecurringSale extends \Genesis\API\Request\Base\Financial\Cards\Credit
             'fx_rate_id'                => $this->fx_rate_id,
             'business_attributes'       => $this->getBusinessAttributesStructure(),
             'managed_recurring'         => $this->getManagedRecurringAttributesStructure(),
-            'recurring_category'        => $this->recurring_category
+            'recurring_category'        => $this->recurring_category,
+            'funding'                   => $this->getFundingAttributesStructure()
         ];
     }
 }
