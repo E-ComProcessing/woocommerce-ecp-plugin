@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,9 +20,10 @@
  * THE SOFTWARE.
  *
  * @author      emerchantpay
- * @copyright   Copyright (C) 2015-2023 emerchantpay Ltd.
+ * @copyright   Copyright (C) 2015-2024 emerchantpay Ltd.
  * @license     http://opensource.org/licenses/MIT The MIT License
  */
+
 namespace Genesis\Exceptions;
 
 /**
@@ -36,7 +38,8 @@ class InvalidMethod extends Exception
      */
     protected function getCustomMessage()
     {
-        return 'You\'re trying to call a non-existent method!' . PHP_EOL .
+        return ($this->getMessage()) ?
+            $this->getMessage() : 'You\'re trying to call a non-existent method!' . PHP_EOL .
                'For proper usage, please refer to the documentation!';
     }
 }

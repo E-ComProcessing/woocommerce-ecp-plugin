@@ -1,0 +1,26 @@
+.ecp-direct-card-form {
+	text-align: center;
+}
+
+.ecp-direct-card-form #ecp-direct-card-wrapper {
+	margin-bottom: 30px;
+}
+
+.ecp-direct-card-form .ecp-direct-half-wrapper {
+	display: flex;
+}
+
+.ecp-direct-card-form input.ecp-input-wide {
+	display: block;
+	width: 100%;
+}
+
+.ecp-direct-card-form .ecp-input-half-wrapper input {
+	display: inline-block;
+	width: 50%;
+}
+
+#ecp-direct-card-wrapper .jp-card-container {
+	width: auto;
+	max-width: 350px;
+}

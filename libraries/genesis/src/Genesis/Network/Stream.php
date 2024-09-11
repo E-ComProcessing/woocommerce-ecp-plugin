@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,10 +20,14 @@
  * THE SOFTWARE.
  *
  * @author      emerchantpay
- * @copyright   Copyright (C) 2015-2023 emerchantpay Ltd.
+ * @copyright   Copyright (C) 2015-2024 emerchantpay Ltd.
  * @license     http://opensource.org/licenses/MIT The MIT License
  */
+
 namespace Genesis\Network;
+
+use Genesis\Api\Request;
+use Genesis\Exceptions\ErrorNetwork;
 
 /**
  * Stream Context Network Interface
@@ -69,7 +74,7 @@ class Stream extends Base
 
         $headers = [
             'Content-Type: ' . $this->getRequestContentType($requestData['format']),
-            sprintf('Authorization: Basic %s', base64_encode($requestData['user_login'])),
+            $this->authorization($requestData),
             sprintf('Content-Length: %s', strlen($requestData['body'])),
             sprintf('User-Agent: %s', $requestData['user_agent']),
         ];
@@ -150,7 +155,7 @@ class Stream extends Base
         // the handler.
         restore_error_handler();
 
-        throw new \Genesis\Exceptions\ErrorNetwork($errStr, $errNo);
+        throw new ErrorNetwork($errStr, $errNo);
     }
 
     /**
@@ -193,5 +198,20 @@ class Stream extends Base
             '!SSLv2',
             '!SSLv3'
         ];
+    }
+
+    /**
+     * @param $requestData
+     * @return string
+     */
+    protected function authorization($requestData)
+    {
+        switch ($requestData['authorization']) {
+            case Request::AUTH_TYPE_TOKEN:
+                return sprintf('Authorization: Bearer %s', base64_encode($requestData['token']));
+                break;
+            default:
+                return sprintf('Authorization: Basic %s', base64_encode($requestData['user_login']));
+        }
     }
 }

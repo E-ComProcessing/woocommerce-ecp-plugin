@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,7 +20,7 @@
  * THE SOFTWARE.
  *
  * @author      emerchantpay
- * @copyright   Copyright (C) 2015-2023 emerchantpay Ltd.
+ * @copyright   Copyright (C) 2015-2024 emerchantpay Ltd.
  * @license     http://opensource.org/licenses/MIT The MIT License
  */
 
@@ -68,13 +69,13 @@ class Builder
         switch ($interface) {
             default:
             case self::XML:
-                $this->context = new Builders\XML();
+                $this->context = new Builders\Xml();
                 break;
             case self::JSON:
-                $this->context = new Builders\JSON();
+                $this->context = new Builders\Json();
                 break;
             case self::FORM:
-                $this->context = new Builders\FORM();
+                $this->context = new Builders\Form();
                 break;
         }
     }

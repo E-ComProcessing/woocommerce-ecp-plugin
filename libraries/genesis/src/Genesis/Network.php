@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,9 +20,10 @@
  * THE SOFTWARE.
  *
  * @author      emerchantpay
- * @copyright   Copyright (C) 2015-2023 emerchantpay Ltd.
+ * @copyright   Copyright (C) 2015-2024 emerchantpay Ltd.
  * @license     http://opensource.org/licenses/MIT The MIT License
  */
+
 namespace Genesis;
 
 /**
@@ -51,7 +53,7 @@ class Network
         switch ($interface) {
             default:
             case 'curl':
-                $this->context = new Network\cURL();
+                $this->context = new Network\Curl();
                 break;
             case 'stream':
                 $this->context = new Network\Stream();
@@ -92,7 +94,7 @@ class Network
     /**
      * Set Header/Body of the HTTP request
      *
-     * @param \Genesis\API\Request $apiContext
+     * @param \Genesis\Api\Request $apiContext
      * @throws Exceptions\ErrorParameter
      * @throws Exceptions\InvalidArgument
      * @throws Exceptions\InvalidClassMethod
@@ -100,17 +102,20 @@ class Network
     public function setApiCtxData($apiContext)
     {
         $this->context->prepareRequestBody(
-            [
-                'body'       => $apiContext->getDocument(),
-                'url'        => $apiContext->getApiConfig('url'),
-                'type'       => $apiContext->getApiConfig('type'),
-                'port'       => $apiContext->getApiConfig('port'),
-                'protocol'   => $apiContext->getApiConfig('protocol'),
-                'format'     => $apiContext->getApiConfig('format'),
-                'timeout'    => \Genesis\Config::getNetworkTimeout(),
-                'user_agent' => sprintf('Genesis PHP Client v%s', \Genesis\Config::getVersion()),
-                'user_login' => sprintf('%s:%s', \Genesis\Config::getUsername(), \Genesis\Config::getPassword())
-            ]
+            array_merge(
+                [
+                    'body'          => $apiContext->getDocument(),
+                    'url'           => $apiContext->getApiConfig('url'),
+                    'type'          => $apiContext->getApiConfig('type'),
+                    'port'          => $apiContext->getApiConfig('port'),
+                    'protocol'      => $apiContext->getApiConfig('protocol'),
+                    'format'        => $apiContext->getApiConfig('format'),
+                    'timeout'       => \Genesis\Config::getNetworkTimeout(),
+                    'user_agent'    => sprintf('Genesis PHP Client v%s', \Genesis\Config::getVersion()),
+                    'authorization' => $apiContext->getApiConfig('authorization')
+                ],
+                $this->setAuthCredentials($apiContext)
+            )
         );
     }
 
@@ -120,5 +125,40 @@ class Network
     public function sendRequest()
     {
         $this->context->execute();
+    }
+
+    /**
+     * Get HTTP status
+     *
+     * @return mixed
+     */
+    public function getStatus()
+    {
+        return $this->context->getStatus();
+    }
+
+    /**
+     * Determine the appropriate credentials based on the authorization type
+     *
+     * @param \Genesis\Api\Request $apiContext
+     * @return array
+     */
+    protected function setAuthCredentials($apiContext)
+    {
+        switch ($apiContext->getApiConfig('authorization')) {
+            case \Genesis\Api\Request::AUTH_TYPE_TOKEN:
+                return [
+                    'token' => $apiContext->getApiConfig('bearer_token')
+                ];
+                break;
+            default:
+                return [
+                    'user_login' => sprintf(
+                        '%s:%s',
+                        \Genesis\Config::getUsername(),
+                        \Genesis\Config::getPassword()
+                    )
+                ];
+        }
     }
 }

@@ -13,6 +13,7 @@ div.ecp-threeds-modal {
 }
 
 iframe.ecp-threeds-iframe {
+	margin: 0 auto;
 	box-shadow: none;
 	outline: none;
 	border: none;

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,9 +20,10 @@
  * THE SOFTWARE.
  *
  * @author      emerchantpay
- * @copyright   Copyright (C) 2015-2023 emerchantpay Ltd.
+ * @copyright   Copyright (C) 2015-2024 emerchantpay Ltd.
  * @license     http://opensource.org/licenses/MIT The MIT License
  */
+
 namespace Genesis\Exceptions;
 
 /**
@@ -40,6 +42,6 @@ class ErrorNetwork extends Exception
      */
     protected function getCustomMessage()
     {
-        return 'Unknown error during network request!';
+        return ($this->getMessage()) ? $this->getMessage() : 'Unknown error during network request!';
     }
 }

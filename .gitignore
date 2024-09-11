@@ -3,3 +3,7 @@
 libraries/.DS_Store
 libraries/genesis/.DS_Store
 node_modules/
+vendor/
+phpcs_report.xml
+phpmd_report.xml
+ecomprocessing-gateway-module-for-woocommerce.zip

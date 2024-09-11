@@ -28,18 +28,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta http-equiv="X-UA-Compatible" content="ie=edge">
 	<title></title>
-	<link rel="stylesheet" href="<?php echo esc_url_raw( plugins_url( '../assets/css/threeds.css', plugin_dir_path( __FILE__ ) ) ); ?>">
+	<link rel="stylesheet" href="<?php echo esc_url_raw( plugins_url( '../assets/css/threeds.css', plugin_dir_path( __FILE__ ) ) ); // phpcs:ignore ?>">
 </head>
-<body onload="submitThreedsMethod()" style="display: none">
-<iframe width="1200" height="800" id="threeDSMethodIframe" name="threeDSMethodIframe" class="hidden">
+<body class="ecp-form-helper-body" onload="submitThreedsMethod()" style="display: none">
+<iframe width="1200" height="800" id="threeDSMethodIframe" name="threeDSMethodIframe" class="ecp-hidden">
 	<html>
 	<body>
 	</body>
 	</html>
 </iframe>
-<div class="center">
+<div class="ecp-center">
 	<div class="content">
-		<div class="screen-logo">
+		<div class="ecp-screen-logo">
 			<img src="<?php echo esc_url_raw( plugins_url( '../assets/images/ecomprocessing_logo.png', plugin_dir_path( __FILE__ ) ) ); ?>" alt="Ecomprocessing logo">
 		</div>
 		<h3>The payment is being processed

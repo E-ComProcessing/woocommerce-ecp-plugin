@@ -1,5 +1,5 @@
-/*
- * Copyright (C) 2018-2023 E-Comprocessing Ltd.
+/**
+ * Copyright (C) 2018-2024 E-Comprocessing Ltd.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -12,8 +12,9 @@
  * GNU General Public License for more details.
  *
  * @author      E-Comprocessing Ltd.
- * @copyright   2018-2023 E-Comprocessing Ltd.
+ * @copyright   2018-2024 E-Comprocessing Ltd.
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
+ * @package     assets/javascript/direct-method-browser-params-helper
  */
 
 const ecpPopulateBrowserParams = {
@@ -27,11 +28,11 @@ const ecpPopulateBrowserParams = {
 		'user_agent',
 		'browser_timezone_zone_offset',
 	],
-	initParameters: function() {
+	initParameters: function () {
 		let fieldNames = this.fieldNames;
 
 		try {
-			// method deprecated
+			// method deprecated.
 			fieldNames['java_enabled'] = navigator.javaEnabled();
 		} catch (e) {
 			fieldNames['java_enabled'] = false;
@@ -42,25 +43,29 @@ const ecpPopulateBrowserParams = {
 		fieldNames['screen_width']     = screen.width;
 		fieldNames['user_agent']       = navigator.userAgent;
 
-		let browserTime = new Date();
+		let browserTime                            = new Date();
 		fieldNames['browser_timezone_zone_offset'] = browserTime.getTimezoneOffset();
 	},
-	populateParameters: function(document) {
+	populateParameters: function (document) {
 		this.fieldNames.forEach(
 			function (fieldName) {
-				let inputElement = document.querySelector('#' + this.methodName + '_' + fieldName);
+				let inputElement = document.querySelector( '#' + this.methodName + '_' + fieldName );
 				if (inputElement) {
-					inputElement.setAttribute('value', this.fieldNames[fieldName]);
+					inputElement.setAttribute( 'value', this.fieldNames[fieldName] );
 				}
-			}, this
+			},
+			this
 		)
 	},
 	execute: function (document) {
 		this.initParameters();
-		this.populateParameters(document);
+		this.populateParameters( document );
 	}
 };
 
-document.addEventListener('DOMContentLoaded', function () {
-	ecpPopulateBrowserParams.execute(document);
-});
+document.addEventListener(
+	'DOMContentLoaded',
+	function () {
+		ecpPopulateBrowserParams.execute( document );
+	}
+);

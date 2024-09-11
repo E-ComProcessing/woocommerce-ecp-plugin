@@ -1,5 +1,5 @@
-/*
- * Copyright (C) 2018-2023 E-Comprocessing Ltd.
+/**
+ * Copyright (C) 2018-2024 E-Comprocessing Ltd.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -12,49 +12,65 @@
  * GNU General Public License for more details.
  *
  * @author      E-Comprocessing Ltd.
- * @copyright   2018-2023 E-Comprocessing Ltd.
+ * @copyright   2018-2024 E-Comprocessing Ltd.
  * @license     http://opensource.org/licenses/gpl-2.0.php GNU General Public License, version 2 (GPL-2.0)
+ * @package     assets/javascript/direct-method-form-helper.js
  */
 
-document.addEventListener('DOMContentLoaded', function () {
-	jQuery(function ($) {
-		const paymentMethod                = 'ecomprocessing_direct'
-		const checkoutForm                 = $('form.checkout');
-		const threedsHelperControllerRegEx = /wc_ecomprocessing_threeds_form_helper/gi;
+document.addEventListener(
+	'DOMContentLoaded',
+	function () {
+		jQuery(
+			function ($) {
+				const paymentMethod                = 'ecomprocessing_direct'
+				const checkoutForm                 = $( 'form.checkout' );
+				const threedsHelperControllerRegEx = /wc_ecomprocessing_threeds_form_helper/gi;
 
-		checkoutForm.on('checkout_place_order_success', function(event, data) {
-			if (
-				! data.redirect.match(threedsHelperControllerRegEx) ||
-				checkoutForm.find('input[name="payment_method"]:checked').val() !== paymentMethod
-			) {
-				return;
+				checkoutForm.on(
+					'checkout_place_order_success',
+					function ( event, data ) {
+						if (
+							! data.redirect.match( threedsHelperControllerRegEx ) ||
+							checkoutForm.find( 'input[name="payment_method"]:checked' ).val() !== paymentMethod
+						) {
+							return;
+						}
+
+						const parentDiv = document.querySelector( '.ecp-threeds-modal' );
+						const iframe    = document.querySelector( '.ecp-threeds-iframe' );
+
+						this.style.opacity = 0.6;
+
+						try {
+							fetch(
+								data.redirect,
+								{
+									method: 'GET',
+								}
+							)
+								.then(
+									function ( response) {
+										return response.text()
+									}
+								)
+								.then(
+									function ( html ) {
+										const doc = iframe.contentWindow.document;
+										doc.open();
+										doc.write( html );
+										doc.close();
+										parentDiv.style.display = 'block';
+									}
+								)
+							data.messages = '<div class="ecp-payment-notice">The payment is being processed</div>';
+						} catch (e) {
+							return true;
+						}
+
+						return false;
+					}
+				)
 			}
-
-			const parentDiv = document.querySelector('.ecp-threeds-modal');
-			const iframe    = document.querySelector('.ecp-threeds-iframe');
-
-			this.style.opacity = 0.6;
-
-			try {
-				fetch(data.redirect, {
-					method: 'GET',
-				})
-					.then(function (response) {
-						return response.text()
-					})
-					.then(function (html) {
-						const doc = iframe.contentWindow.document;
-						doc.open();
-						doc.write(html);
-						doc.close();
-						parentDiv.style.display = 'block';
-					})
-				data.messages = '<div class="ecp-payment-notice">The payment is being processed</div>';
-			} catch (e) {
-				return true;
-			}
-
-			return false;
-		})
-	})
-});
+		)
+	}
+);

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,10 +20,13 @@
  * THE SOFTWARE.
  *
  * @author      emerchantpay
- * @copyright   Copyright (C) 2015-2023 emerchantpay Ltd.
+ * @copyright   Copyright (C) 2015-2024 emerchantpay Ltd.
  * @license     http://opensource.org/licenses/MIT The MIT License
  */
+
 namespace Genesis\Utils;
+
+use Exception;
 
 /**
  * Check the system for dependencies
@@ -80,7 +84,7 @@ final class Requirements
     public static function checkSystemVersion()
     {
         if (\Genesis\Utils\Common::compareVersions(self::$minPHPVersion, '<')) {
-            throw new \Exception(self::getErrorMessage('system'));
+            throw new Exception(self::getErrorMessage('system'));
         }
     }
 
@@ -94,7 +98,7 @@ final class Requirements
     public static function isFunctionExists($function, $error)
     {
         if (!function_exists($function)) {
-            throw new \Exception($error);
+            throw new Exception($error);
         }
     }
 
@@ -109,7 +113,7 @@ final class Requirements
     public static function isMethodExists($method, $class, $error)
     {
         if (!method_exists($method, $class)) {
-            throw new \Exception($error);
+            throw new Exception($error);
         }
     }
 
@@ -123,7 +127,7 @@ final class Requirements
     public static function isClassExists($class, $error)
     {
         if (!class_exists($class)) {
-            throw new \Exception($error);
+            throw new Exception($error);
         }
     }
 
