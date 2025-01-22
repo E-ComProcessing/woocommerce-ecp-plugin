@@ -6,7 +6,7 @@
  * Text Domain: woocommerce-ecomprocessing
  * Author: ecomprocessing
  * Author URI: https://e-comprocessing.com/
- * Version: 1.16.1
+ * Version: 1.17.0
  * Requires at least: 4.0
  * Tested up to: 6.6
  * WC requires at least: 3.0.0

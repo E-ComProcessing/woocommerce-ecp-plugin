@@ -1,6 +1,6 @@
 {
   "name": "ecomprocessing-gateway-module-for-woocommerce",
-  "version": "1.16.1",
+  "version": "1.17.0",
   "description": "Extend WooCommerce's Checkout options with ecomprocessing's Genesis Gateway",
   "main": "index.js",
   "author": "Ecomprocessing",
